@@ -24,7 +24,7 @@ const coverageReporter: ReporterDescription = [
     rewritePath: ({absolutePath}) => {
       // It isn't clear if this is before or after the exclude rule
       return (absolutePath as string)
-        .replace("codap-plugin-starter-project/", "")
+        .replace("neo-codap-plugin/", "")
         .replace(/\?[0-9a-z]+$/,"");
     },
     /* Directory in which to write coverage reports */

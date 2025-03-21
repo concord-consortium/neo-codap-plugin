@@ -82,7 +82,7 @@ export const App = () => {
 
   return (
     <div className="App">
-      CODAP Starter Plugin
+      <h1>NASA Earth Observatory</h1>
       <div className="buttons">
         <button onClick={handleCreateData}>
           Create some data
