@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref_type == 'branch' && 'branches' || 'versions' }}
-      url: https://codap3.concord.org/branch/main/?di=https://models-resources.concord.org/codap-plugin-starter-project/${{ steps.s3-deploy.outputs.deployPath }}/index.html
+      url: https://codap3.concord.org/branch/main/?di=https://models-resources.concord.org/neo-codap-plugin/${{ steps.s3-deploy.outputs.deployPath }}/index.html
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,7 +37,7 @@ jobs:
         id: s3-deploy
         with:
           bucket: models-resources
-          prefix: codap-plugin-starter-project
+          prefix: neo-codap-plugin
           awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
           awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           # Parameters to GHActions have to be strings, so a regular yaml array cannot

@@ -1,7 +1,7 @@
 {
-  "name": "codap-plugin-starter-project",
+  "name": "neo-codap-plugin",
   "version": "0.0.1",
-  "description": "Concord Consortium Starter CODAP Plugin",
+  "description": "NASA Earth Observatory CODAP plugin",
   "main": "index.js",
   "browserslist": "> 0.2%, last 5 versions, Firefox ESR, not dead, not ie > 0",
   "jest": {
@@ -60,14 +60,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/concord-consortium/starter-projects.git"
+    "url": "git+https://github.com/concord-consortium/neo-codap-plugin.git"
   },
   "author": "Concord Consortium",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/concord-consortium/starter-projects/issues"
+    "url": "https://github.com/concord-consortium/neo-codap-plugin/issues"
   },
-  "homepage": "https://github.com/concord-consortium/starter-projects#readme",
+  "homepage": "https://github.com/concord-consortium/neo-codap-plugin#readme",
   "devDependencies": {
     "@bgotink/playwright-coverage": "^0.3.2",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
