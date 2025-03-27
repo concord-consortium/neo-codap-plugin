@@ -48,6 +48,9 @@ module.exports = (env, argv) => {
           warnings: false,
         },
       },
+      bonjour: {
+        name: 'neo-codap-plugin',
+      },
     },
     devtool: devMode ? 'eval-cheap-module-source-map' : 'source-map',
     entry: './src/index.tsx',

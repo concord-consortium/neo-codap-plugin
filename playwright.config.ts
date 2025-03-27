@@ -2,6 +2,11 @@ import { PlaywrightCoverageOptions } from "@bgotink/playwright-coverage";
 import { defineConfig, devices, ReporterDescription } from "@playwright/test";
 import path from "path";
 
+// Consider adding dotenv with a default value.
+// Also consider parsing the package.json to get the repository name.
+process.env.REPOSITORY_NAME = "neo-codap-plugin";
+
+
 const collectCoverage = !!process.env.CI;
 const coverageReporter: ReporterDescription = [
   "@bgotink/playwright-coverage",
@@ -24,7 +29,7 @@ const coverageReporter: ReporterDescription = [
     rewritePath: ({absolutePath}) => {
       // It isn't clear if this is before or after the exclude rule
       return (absolutePath as string)
-        .replace("neo-codap-plugin/", "")
+        .replace(`${process.env.REPOSITORY_NAME}/`, "")
         .replace(/\?[0-9a-z]+$/,"");
     },
     /* Directory in which to write coverage reports */
@@ -74,7 +79,7 @@ export default defineConfig<PlaywrightCoverageOptions>({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    [ "html" ],
+    [ "html", { open: "never" } ],
     [ "list" ],
     ...(collectCoverage ? [coverageReporter] : []),
     ...(reportJson ? [jsonReporter] : []),
@@ -82,7 +87,7 @@ export default defineConfig<PlaywrightCoverageOptions>({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    // baseURL: 'http://127.0.0.1:3000',
+    baseURL: process.env.CI ? "https://localhost:8080" : undefined,
 
     /* Collect trace. See https://playwright.dev/docs/trace-viewer
        The default value of this is "on-first-retry". This is recommended because recording traces
@@ -99,13 +104,22 @@ export default defineConfig<PlaywrightCoverageOptions>({
 
   /* Configure projects for major browsers */
   projects: [
+    /* Global setup as described here: https://playwright.dev/docs/test-global-setup-teardown#setup
+       This is used to to discover the devserver via bonjour. The devserver port is then set as an environment
+       variable: DEV_SERVER_PORT. */
+    {
+      name: "setup",
+      testMatch: "global-setup.ts",
+    },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["setup"],
     },
     {
       name: "chromium with channel",
       use: { ...devices["Desktop Chrome"], channel: "chromium" },
+      dependencies: ["setup"],
     },
 
     // {
@@ -139,12 +153,12 @@ export default defineConfig<PlaywrightCoverageOptions>({
     // },
   ],
 
-  /* Run local dev server before starting the tests */
-  webServer: {
+  /* Run local dev server before starting the tests only in CI */
+  webServer: process.env.CI ? {
     command: "npm run start:secure",
     url: "https://localhost:8080/",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120_000,
     ignoreHTTPSErrors: true,
-  },
+  } : undefined,
 });
