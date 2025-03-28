@@ -1,18 +1,18 @@
 import { Box, Stack, RadioGroup } from "@chakra-ui/react";
 import React from "react";
-import { DatasetType, kDatasets  } from "./dataset-config";
+import { kDatasets  } from "../../models/dataset-config";
 
 interface DatasetSelectorProps {
   /** The currently selected dataset */
-  selectedDataset: DatasetType;
+  selectedDataset: string;
   /** Callback when dataset selection changes */
-  onDatasetChange?: (dataset: DatasetType) => void;
+  onDatasetChange?: (dataset: string) => void;
 }
 
 export const DatasetSelector: React.FC<DatasetSelectorProps> = ({ selectedDataset, onDatasetChange }) => {
   // Handler for dataset selection changes
   const handleDatasetChange = (details: { value: string }) => {
-    const value = details.value as DatasetType;
+    const value = details.value;
     onDatasetChange?.(value);
   };
 
