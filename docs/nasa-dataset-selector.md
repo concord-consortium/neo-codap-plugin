@@ -122,6 +122,7 @@ interface DatasetConfig {
    - Create DatasetTab with the UI from App.tsx, and use it directly.
    - Implement basic tab structure using Chakra UI
    - Ensure all existing functionality works in new tab structure
+   - Update the styling to match the [mockup design](mockup.png)
 
 2. Phase 2: Dataset Selector Implementation
    - Create Playwright test for dataset selection
