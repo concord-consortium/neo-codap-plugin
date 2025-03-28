@@ -63,16 +63,3 @@ process.on("SIGINT", () => {
   bonjour.destroy();
   process.exit();
 });
-
-// This is what I got when running `npm start`
-// Service found:
-//   Name: Webpack Dev Server Mac:8080
-//   Type: http
-//   Host: Mac
-//   IP Address: 192.168.1.247, fe80::1093:cb6d:e516:41ba, 2600:4040:5c48:fe00:189d:4b2:9675:8511, 2600:4040:5c48:fe00:b472:9742:c271:85bb, fe80::88:7eff:fe4e:a17e
-//   Port: 8080
-//   Subtypes:
-//   Protocol: tcp
-//   Flags: None
-//   TXT Records:
-
