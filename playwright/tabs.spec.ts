@@ -26,16 +26,18 @@ test.describe("Tab Navigation", () => {
     await expect(datasetTab).toHaveAttribute("aria-selected", "false");
   });
 
-  test.fail("should show correct content for each tab", async ({ page }) => {
+  test("should show correct content for each tab", async ({ page }) => {
     // Check Dataset tab content
     const datasetTab = page.getByRole("tab", { name: "Dataset" });
     await expect(datasetTab).toBeVisible();
+    await expect(page.getByRole("heading", { name: "NASA Earth Observatory" })).toBeVisible();
 
     // Switch to About tab
     const aboutTab = page.getByRole("tab", { name: "About" });
     await aboutTab.click();
 
     // Check About tab content
-    await expect(page.getByText("NASA Earth Observatory")).toBeVisible();
+    const aboutContent = page.getByRole("tabpanel", { name: "About" }).getByText("NASA Earth Observatory");
+    await expect(aboutContent).toBeVisible();
   });
 });

@@ -13,7 +13,7 @@ export const TabContainer: React.FC = () => {
         <DatasetTab />
       </Tabs.Content>
       <Tabs.Content value="about">
-        <div>About NASA Earth Observatory</div>
+        <div>NASA Earth Observatory</div>
       </Tabs.Content>
     </Tabs.Root>
   );
