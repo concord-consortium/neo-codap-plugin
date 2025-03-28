@@ -6,6 +6,9 @@
 /playwright-report
 /test-results
 
+# docs
+/docs/local-docs
+
 # production
 /build
 /dist

@@ -95,11 +95,11 @@ export default typescriptEslint.config(
       // like the Concord mobx-state-tree override
       "import/no-extraneous-dependencies": "warn",
       "import/no-useless-path-segments": "warn",
+      "import/no-duplicates": "error",
       "@stylistic/js/jsx-quotes": ["error", "prefer-double"],
       "max-len": ["warn", { code: 120, ignoreUrls: true }],
       "no-bitwise": "error",
       "no-debugger": "off",
-      "no-duplicate-imports": "error",
       "no-sequences": "error",
       "no-shadow": "off", // superseded by @typescript-eslint/no-shadow
       "no-tabs": "error",
@@ -184,6 +184,15 @@ export default typescriptEslint.config(
   {
     name: "eslint configs",
     files: ["eslint.*.mjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      },
+    },
+  },
+  {
+    name: "scripts",
+    files: ["scripts/**"],
     languageOptions: {
       globals: {
         ...globals.node
