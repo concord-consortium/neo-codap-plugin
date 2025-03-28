@@ -104,22 +104,13 @@ export default defineConfig<PlaywrightCoverageOptions>({
 
   /* Configure projects for major browsers */
   projects: [
-    /* Global setup as described here: https://playwright.dev/docs/test-global-setup-teardown#setup
-       This is used to to discover the devserver via bonjour. The devserver port is then set as an environment
-       variable: DEV_SERVER_PORT. */
-    {
-      name: "setup",
-      testMatch: "global-setup.ts",
-    },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      dependencies: ["setup"],
     },
     {
       name: "chromium with channel",
       use: { ...devices["Desktop Chrome"], channel: "chromium" },
-      dependencies: ["setup"],
     },
 
     // {
