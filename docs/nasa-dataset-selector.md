@@ -125,11 +125,25 @@ interface DatasetConfig {
    - Update the styling to match the [mockup design](mockup.png)
 
 2. Phase 2: Dataset Selector Implementation
-   - Create Playwright test for dataset selection
-   - Create dataset selector component
-   - Implement radio button group
-   - Style to match NASA Earth Observatory design
-   - Add tests for dataset selection behavior
+   A. Create Playwright test for dataset selection
+      1. Test default selection (Rainfall)
+      2. Test switching between datasets
+      3. Test persistence of selection
+
+   B. Create dataset selector component
+      1. Define DatasetConfig interface and constants
+      2. Implement state management for selection
+      3. Add onChange handlers
+
+   C. Add dataset selector to dataset tab
+      1. Position above existing components
+      2. Maintain existing functionality
+      3. Ensure proper spacing/layout
+
+   D. Add comprehensive test coverage
+      1. Unit tests for component
+      2. Integration tests with existing functionality
+      3. Accessibility tests
 
 3. Phase 3: Integration
    - Move existing functionality into Dataset tab
