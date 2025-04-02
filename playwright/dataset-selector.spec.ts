@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 
 test.describe("Dataset Selector", () => {
-  test.beforeEach(async ({ baseURL, page }) => {
+  test.beforeEach(async ({ page }) => {
     // Navigate to the app before each test
     await page.goto("/?noEmbed");
 
