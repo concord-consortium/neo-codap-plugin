@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 
-test("App inside of CODAP", async ({baseURL,page}) => {
+test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
   await page.goto(`https://codap3.concord.org/?mouseSensor&di=${baseURL}`);
 

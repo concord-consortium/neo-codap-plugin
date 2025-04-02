@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 
 test.describe("Tab Navigation", () => {
-  test.beforeEach(async ({ baseURL,page }) => {
+  test.beforeEach(async ({ baseURL, page }) => {
     // Navigate to the app before each test
     await page.goto("/");
   });
