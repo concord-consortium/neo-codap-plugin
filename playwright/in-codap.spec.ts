@@ -1,9 +1,9 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 
-test("App inside of CODAP", async ({page}) => {
+test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
-  await page.goto("https://codap3.concord.org/?mouseSensor&di=https://localhost:8080");
+  await page.goto(`https://codap3.concord.org/?mouseSensor&di=${baseURL}`);
 
   const iframe = page.frameLocator(".codap-web-view-iframe");
   await iframe.getByRole("button", { name: "Create some data" }).click();

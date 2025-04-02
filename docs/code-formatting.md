@@ -1,0 +1,3 @@
+- Double quotes should always be used
+- Indentation should be 2 spaces
+- Filenames should use kebab case

@@ -1,6 +1,12 @@
 # NASA Earth Observatory CODAP Plugin
 This CODAP Plugin downloads raster data from the NASA Earth Observatory and adds it to a Map in CODAP. It also generates a data table with time series data based on the locations of pins in the CODAP Map.
 
+## UI Components
+This project uses Chakra UI v3 components. When adding new components or modifying existing ones:
+- Use Chakra UI v3 components (e.g., `Tabs.Root`, `Tabs.List`, `Tabs.Trigger`, `Tabs.Content`)
+- Do NOT use v2 components (e.g., `Tab`, `TabList`, `TabPanels`)
+- Follow the existing component patterns in the codebase
+
 # Development
 
 ## Getting Started
