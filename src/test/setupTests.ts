@@ -2,7 +2,10 @@ import "@testing-library/jest-dom";
 
 // Add structuredClone polyfill for Chakra UI
 if (!window.structuredClone) {
-  window.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
+  window.structuredClone = (obj: any) => {
+    if (obj === undefined) return undefined;
+    return JSON.parse(JSON.stringify(obj));
+  };
 }
 
 // Mock matchMedia
