@@ -11,7 +11,7 @@ import {
   ClientNotification,
 } from "@concord-consortium/codap-plugin-api";
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
-import { DatasetType, kDatasets } from "../dataset-selector/dataset-config";
+import { kDatasets } from "../../models/dataset-config";
 
 const kPluginName = "Sample Plugin";
 const kVersion = "0.0.1";
@@ -29,8 +29,9 @@ export const DatasetTab: React.FC = () => {
   const notificationId = useId();
   // Find the default selected dataset from our config
   const defaultDataset = kDatasets.find(d => d.defaultSelected)?.id || kDatasets[0].id;
-  const [selectedDataset, setSelectedDataset] = useState<DatasetType>(defaultDataset);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string>(defaultDataset);
 
+  const selectedDataset = kDatasets.find(d => d.id === selectedDatasetId);
 
   useEffect(() => {
     // Check for noEmbed parameter
@@ -49,8 +50,8 @@ export const DatasetTab: React.FC = () => {
     addDataContextChangeListener(kDataContextName, casesUpdatedListener);
   }, []);
 
-  const handleDatasetChange = (dataset: DatasetType) => {
-    setSelectedDataset(dataset);
+  const handleDatasetChange = (datasetId: string) => {
+    setSelectedDatasetId(datasetId);
   };
 
   const handleOpenTable = async () => {
@@ -95,7 +96,13 @@ export const DatasetTab: React.FC = () => {
   return (
     <div className="App">
       <h1>NASA Earth Observatory</h1>
-      <DatasetSelector selectedDataset={selectedDataset} onDatasetChange={handleDatasetChange} />
+      <DatasetSelector selectedDataset={selectedDatasetId} onDatasetChange={handleDatasetChange} />
+      {selectedDataset && (
+        <div className="dataset-info">
+          <h2>{selectedDataset.label}</h2>
+          <img src={selectedDataset.legendImage} alt={selectedDataset.label} />
+        </div>
+      )}
       <div className="buttons">
         <button onClick={handleCreateData}>
           Create some data
