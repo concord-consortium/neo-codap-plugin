@@ -1,0 +1,23 @@
+.about-tab {
+  color: #222;
+  margin: 15px;
+
+  h4 {
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-weight: 500;
+    margin-bottom: 10px;
+
+    a {
+      color: #0000EE;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
