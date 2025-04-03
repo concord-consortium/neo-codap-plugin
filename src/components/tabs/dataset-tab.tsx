@@ -10,6 +10,8 @@ import {
   addDataContextChangeListener,
   ClientNotification,
 } from "@concord-consortium/codap-plugin-api";
+import { DatasetSelector } from "../dataset-selector/dataset-selector";
+import { kDatasets } from "../../models/dataset-config";
 
 const kPluginName = "Sample Plugin";
 const kVersion = "0.0.1";
@@ -25,8 +27,19 @@ export const DatasetTab: React.FC = () => {
   const [dataContext, setDataContext] = useState<any>(null);
   const responseId = useId();
   const notificationId = useId();
+  // Find the default selected dataset from our config
+  const defaultDataset = kDatasets.find(d => d.defaultSelected)?.id || kDatasets[0].id;
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string>(defaultDataset);
+
+  const selectedDataset = kDatasets.find(d => d.id === selectedDatasetId);
 
   useEffect(() => {
+    // Check for noEmbed parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("noEmbed")) {
+      return; // Skip initialization if noEmbed parameter exists
+    }
+
     initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
 
     const casesUpdatedListener = (listenerRes: ClientNotification) => {
@@ -36,6 +49,10 @@ export const DatasetTab: React.FC = () => {
     };
     addDataContextChangeListener(kDataContextName, casesUpdatedListener);
   }, []);
+
+  const handleDatasetChange = (datasetId: string) => {
+    setSelectedDatasetId(datasetId);
+  };
 
   const handleOpenTable = async () => {
     const res = await createTable(kDataContextName);
@@ -79,6 +96,13 @@ export const DatasetTab: React.FC = () => {
   return (
     <div className="App">
       <h1>NASA Earth Observatory</h1>
+      <DatasetSelector selectedDataset={selectedDatasetId} onDatasetChange={handleDatasetChange} />
+      {selectedDataset && (
+        <div className="dataset-info">
+          <h2>{selectedDataset.label}</h2>
+          <img src={selectedDataset.legendImage} alt={selectedDataset.label} />
+        </div>
+      )}
       <div className="buttons">
         <button onClick={handleCreateData}>
           Create some data

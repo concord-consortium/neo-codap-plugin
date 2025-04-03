@@ -108,10 +108,12 @@ export default defineConfig<PlaywrightCoverageOptions>({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "chromium with channel",
-      use: { ...devices["Desktop Chrome"], channel: "chromium" },
-    },
+    // This is a newer version of chromium that uses the newer headless mode.
+    // However it doesn't capture canvas snapshots well.
+    // {
+    //   name: "chromium with channel",
+    //   use: { ...devices["Desktop Chrome"], channel: "chromium" },
+    // },
 
     // {
     //   name: 'firefox',
