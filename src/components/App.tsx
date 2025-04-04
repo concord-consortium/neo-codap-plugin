@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import "./App.css";
+import "./app.css";
 import { Provider } from "./ui/provider";
 import { TabContainer } from "./tabs/tab-container";
 import { initializePlugin } from "@concord-consortium/codap-plugin-api";
