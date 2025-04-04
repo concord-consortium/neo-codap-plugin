@@ -38,14 +38,27 @@ async function updateDataContextTitle(title: string): Promise<void> {
   });
 }
 
+const kDemoLocation = {
+  latitude: 42.3555,
+  longitude: -71.0565
+};
+
+interface DatasetItem {
+  date: string;
+  // In the form #RRGGBB
+  color: string;
+}
+
 export class DataManager {
 
   async getData(dataset: DatasetConfig): Promise<void> {
     const existingDataContext = await getDataContext(kDataContextName);
     let createDC;
 
-    // Get dates for the selected dataset
-    const dates = typedDatasetImages[dataset.id]?.images.map((img: DatasetImage) => ({ date: img.date })) || [];
+    // Get items for the selected dataset
+    const items: DatasetItem[] = typedDatasetImages[dataset.id]?.images.map(
+      (img: DatasetImage) => ({ date: img.date, color: "#ff0000" })
+    ) || [];
 
     if (!existingDataContext.success) {
       createDC = await createDataContext(kDataContextName);
@@ -55,14 +68,15 @@ export class DataManager {
       await updateDataContextTitle(dataset.label);
       await this.createDatesCollection();
       await clearExistingCases();
-      await createItems(kDataContextName, dates);
+      await createItems(kDataContextName, items);
       await createTable(kDataContextName);
     }
   }
 
   private async createDatesCollection(): Promise<void> {
     await createNewCollection(kDataContextName, kCollectionName, [
-      { name: "date", type: "date" }
+      { name: "date", type: "date" },
+      { name: "color", type: "color" }
     ]);
   }
 }
