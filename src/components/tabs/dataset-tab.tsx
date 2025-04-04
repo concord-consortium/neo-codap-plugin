@@ -9,9 +9,28 @@ import {
   initializePlugin,
   addDataContextChangeListener,
   ClientNotification,
+  sendMessage
 } from "@concord-consortium/codap-plugin-api";
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { kDatasets } from "../../models/dataset-config";
+import datasetImages from "../../data/neo-dataset-images.json";
+
+interface DatasetImage {
+  date: string;
+  id: string;
+}
+
+interface DatasetData {
+  images: DatasetImage[];
+  maxResolution: {
+    width: number;
+    height: number;
+  };
+}
+
+type DatasetImagesType = Record<string, DatasetData>;
+
+const typedDatasetImages = datasetImages as DatasetImagesType;
 
 const kPluginName = "Sample Plugin";
 const kVersion = "0.0.1";
@@ -19,12 +38,14 @@ const kInitialDimensions = {
   width: 380,
   height: 680
 };
-const kDataContextName = "SamplePluginData";
+const kDataContextName = "NEOPluginData";
+const kDatesCollectionName = "Available Dates";
 
 export const DatasetTab: React.FC = () => {
   const [codapResponse, setCodapResponse] = useState<any>(undefined);
   const [listenerNotification, setListenerNotification] = useState<string>();
   const [dataContext, setDataContext] = useState<any>(null);
+  const [datesTableCreated, setDatesTableCreated] = useState(false);
   const responseId = useId();
   const notificationId = useId();
   // Find the default selected dataset from our config
@@ -59,26 +80,35 @@ export const DatasetTab: React.FC = () => {
     setCodapResponse(res);
   };
 
-  const handleCreateData = async() => {
+  const handleGetData = async () => {
     const existingDataContext = await getDataContext(kDataContextName);
     let createDC, createNC, createI;
+
+    // Get dates for the selected dataset
+    const dates = typedDatasetImages[selectedDatasetId]?.images.map((img: DatasetImage) => ({ date: img.date })) || [];
+
     if (!existingDataContext.success) {
       createDC = await createDataContext(kDataContextName);
       setDataContext(createDC.values);
     }
+
     if (existingDataContext?.success || createDC?.success) {
-      createNC = await createNewCollection(kDataContextName, "Pets", [
-        { name: "animal", type: "categorical" },
-        { name: "count", type: "numeric" }
+      await sendMessage("update", `dataContext[${kDataContextName}]`, {
+        "title": selectedDataset?.label,
+      });
+
+      createNC = await createNewCollection(kDataContextName, kDatesCollectionName, [
+        { name: "date", type: "date" }
       ]);
-      createI = await createItems(kDataContextName, [
-        { animal: "dog", count: 5 },
-        { animal: "cat", count: 4 },
-        { animal: "fish", count: 20 },
-        { animal: "horse", count: 1 },
-        { animal: "bird", count: 2 },
-        { animal: "snake", count: 1 }
-      ]);
+
+      // Delete all of the cases so we can start fresh. It didn't look like there was
+      // a way to do this with the plugin API, so we're using the sendMessage function
+      await sendMessage("delete",`dataContext[${kDataContextName}].allCases`);
+      createI = await createItems(kDataContextName, dates);
+
+      // Create and show the table
+      await createTable(kDataContextName);
+      setDatesTableCreated(true);
     }
 
     setCodapResponse(`
@@ -101,12 +131,17 @@ export const DatasetTab: React.FC = () => {
         <div className="dataset-info">
           <h2>{selectedDataset.label}</h2>
           <img src={selectedDataset.legendImage} alt={selectedDataset.label} />
+          <button onClick={handleGetData} className="get-data-button">
+            Get Data
+          </button>
+          {datesTableCreated && (
+            <p className="success-message">
+              Dates table has been created and opened in CODAP
+            </p>
+          )}
         </div>
       )}
       <div className="buttons">
-        <button onClick={handleCreateData}>
-          Create some data
-        </button>
         <button onClick={handleOpenTable} disabled={!dataContext}>
           Open Table
         </button>

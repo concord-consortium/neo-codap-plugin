@@ -24,3 +24,7 @@ This was useful to learn more about. However it seems like a dead-end:
 - The service is supposed to be shut down soon
 - The model of WMS itself doesn't seem to fit well with low budget places like government sites. It allows a user to specify any pixel dimensions, and if supported any lat,long area. This would require a server to handle these requests and each request would be pretty intensive.
 - Not all of the layers worked.
+
+## Notes
+Here is the template to download the images:
+`https://neo.gsfc.nasa.gov/servlet/RenderData?si=${id}&cs=rgb&format=PNG&width=${width}&height=${height}`
