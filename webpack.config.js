@@ -25,7 +25,7 @@ module.exports = (env, argv) => {
     context: __dirname, // to automatically find tsconfig.json
     devServer: {
       static: {
-        directory: path.join(__dirname, 'dist'),
+        directory: path.join(__dirname, 'dev-server-static'),
       },
       hot: true,
       headers: {
