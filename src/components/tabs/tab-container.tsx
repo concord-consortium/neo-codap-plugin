@@ -1,5 +1,6 @@
 import React from "react";
 import { Tabs } from "@chakra-ui/react";
+import { AboutTab } from "./about-tab";
 import { DatasetTab } from "./dataset-tab";
 
 const tabStyles = {
@@ -63,7 +64,7 @@ export const TabContainer: React.FC = () => {
         <DatasetTab />
       </Tabs.Content>
       <Tabs.Content value="about">
-        <div>NASA Earth Observatory</div>
+        <AboutTab />
       </Tabs.Content>
     </Tabs.Root>
   );
