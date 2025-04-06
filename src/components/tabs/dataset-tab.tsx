@@ -6,17 +6,25 @@ import {
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { kDatasets } from "../../models/dataset-config";
 import { isNonEmbedded } from "../../utils/embed-check";
-import { DataManager } from "../../models/data-manager";
+import { DataManager, ProgressCallback } from "../../models/data-manager";
 
 const kDataContextName = "NEOPluginData";
 
-export const DatasetTab: React.FC = () => {
+interface DatasetTabProps {
+  progressCallback: ProgressCallback;
+}
+
+export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   const [listenerNotification, setListenerNotification] = useState<string>();
   const notificationId = useId();
   // Find the default selected dataset from our config
   const defaultDataset = kDatasets.find(d => d.defaultSelected)?.id || kDatasets[0].id;
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(defaultDataset);
-  const [dataManager] = useState(() => new DataManager());
+  const [dataManager] = useState(() => {
+    const manager = new DataManager();
+    manager.setProgressCallback(progressCallback);
+    return manager;
+  });
 
   const selectedDataset = kDatasets.find(d => d.id === selectedDatasetId);
 
