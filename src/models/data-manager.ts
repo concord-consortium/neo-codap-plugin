@@ -82,6 +82,15 @@ export class DataManager {
     this.imageProcessor = new ImageProcessor();
   }
 
+  get maxImages(): number {
+    const urlParams = new URLSearchParams(window.location.search);
+    const maxImages = urlParams.get("maxImages");
+    if (maxImages) {
+      return parseInt(maxImages, 10);
+    }
+    return kMaxImages;
+  }
+
   public setProgressCallback(callback: ProgressCallback) {
     this.progressCallback = callback;
   }
@@ -115,16 +124,13 @@ export class DataManager {
   }
 
   async getData(dataset: DatasetConfig): Promise<void> {
-    const existingDataContext = await getDataContext(kDataContextName);
-    let createDC;
-
     const datasetData = typedDatasetImages[dataset.id];
     if (!datasetData) {
       throw new Error(`Dataset ${dataset.id} not found`);
     }
 
     try {
-      const totalImages = datasetData.images.length > kMaxImages ? kMaxImages : datasetData.images.length;
+      const totalImages = Math.min(datasetData.images.length, this.maxImages);
       let processedImages = 0;
 
       const items: DatasetItem[] = [];
@@ -145,7 +151,7 @@ export class DataManager {
         );
       } else {
         for (const img of datasetData.images) {
-          if (processedImages > kMaxImages) {
+          if (processedImages >= this.maxImages) {
             break;
           }
           await _processImage(img);
@@ -153,6 +159,9 @@ export class DataManager {
         }
       }
 
+      const existingDataContext = await getDataContext(kDataContextName);
+
+      let createDC;
       if (!existingDataContext.success) {
         createDC = await createDataContext(kDataContextName);
       }
