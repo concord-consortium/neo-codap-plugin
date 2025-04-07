@@ -12,11 +12,6 @@ interface PixelCoordinate {
 // TODO: there should probably be one of these per image. This way multiple locations can be looked
 // up for the same image. And it can dispose of the image and canvas when it is done.
 export class ImageProcessor {
-  // TODO: this should support different resolutions, so if possible the image width and height
-  // should be figured out from the image itself.
-  private readonly kImageWidth = 720;
-  private readonly kImageHeight = 360;
-
   // TODO: these should be moved out of the class and just be constants
   private readonly kLongitudeRange = 360; // -180 to 180
   private readonly kLatitudeRange = 180;  // -90 to 90
@@ -28,7 +23,8 @@ export class ImageProcessor {
    * @returns The complete URL for the image
    */
   private generateImageUrl(id: string): string {
-    return `${this.kBaseUrl}?si=${id}&cs=rgb&format=PNG&width=${this.kImageWidth}&height=${this.kImageHeight}`;
+    // Default to 720x360 for the initial request, but we'll use actual dimensions for processing
+    return `${this.kBaseUrl}?si=${id}&cs=rgb&format=PNG&width=720&height=360`;
   }
 
   /**
@@ -59,9 +55,16 @@ export class ImageProcessor {
    * Converts latitude and longitude to pixel coordinates
    * @param lat - Latitude (-90 to 90)
    * @param long - Longitude (-180 to 180)
+   * @param imageWidth - Width of the image in pixels
+   * @param imageHeight - Height of the image in pixels
    * @returns Pixel coordinates in the image
    */
-  public latLongToPixel(lat: number, long: number): PixelCoordinate {
+  public latLongToPixel(lat: number, long: number, imageWidth: number, imageHeight: number): PixelCoordinate {
+    // Validate image dimensions
+    if (imageWidth <= 0 || imageHeight <= 0) {
+      throw new Error("Invalid image dimensions");
+    }
+
     // Normalize longitude from -180...180 to 0...360
     const normalizedLong = long + 180;
     // Normalize latitude from -90...90 to 0...180
@@ -71,13 +74,15 @@ export class ImageProcessor {
     const xPercent = normalizedLong / this.kLongitudeRange;
     const yPercent = normalizedLat / this.kLatitudeRange;
 
-    // TODO: we should not round here, instead it should probably be using floor.
-    // If the pixel value is at 4.9 then it should be in the 4 pixel.
     // Convert to pixel coordinates
     // Note: y is inverted because image coordinates go top-down
+    // Using Math.floor because the left side of the pixel is the
+    // the longitude value and the right side is the longitude value
+    // plus the resolution. So if the resolution is 1 then a pixel
+    // at 4 represents longitues from 4 to 5.
     return {
-      x: Math.round(xPercent * this.kImageWidth),
-      y: Math.round((1 - yPercent) * this.kImageHeight)
+      x: Math.floor(xPercent * imageWidth),
+      y: Math.floor((1 - yPercent) * imageHeight)
     };
   }
 
@@ -89,10 +94,15 @@ export class ImageProcessor {
    * @returns RGB color value
    */
   public extractColor(img: HTMLImageElement, lat: number, long: number): ColorValue {
+    // Ensure the image is loaded and has dimensions
+    if (!img.complete || !img.naturalWidth || !img.naturalHeight) {
+      throw new Error("Image not fully loaded or has invalid dimensions");
+    }
+
     // Create a canvas to read pixel data
     const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
@@ -102,8 +112,8 @@ export class ImageProcessor {
     // Draw image to canvas
     ctx.drawImage(img, 0, 0);
 
-    // Get pixel coordinates
-    const { x, y } = this.latLongToPixel(lat, long);
+    // Get pixel coordinates using actual image dimensions
+    const { x, y } = this.latLongToPixel(lat, long, img.naturalWidth, img.naturalHeight);
 
     console.log("x", x, "y", y);
 
