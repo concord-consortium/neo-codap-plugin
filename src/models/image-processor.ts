@@ -9,13 +9,13 @@ interface PixelCoordinate {
   y: number;
 }
 
+const kLongitudeRange = 360; // -180 to 180
+const kLatitudeRange = 180;  // -90 to 90
+const kBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
+
 // TODO: there should probably be one of these per image. This way multiple locations can be looked
 // up for the same image. And it can dispose of the image and canvas when it is done.
 export class ImageProcessor {
-  // TODO: these should be moved out of the class and just be constants
-  private readonly kLongitudeRange = 360; // -180 to 180
-  private readonly kLatitudeRange = 180;  // -90 to 90
-  private readonly kBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
 
   /**
    * Generates the URL for a NEO dataset image
@@ -24,7 +24,7 @@ export class ImageProcessor {
    */
   private generateImageUrl(id: string): string {
     // Default to 720x360 for the initial request, but we'll use actual dimensions for processing
-    return `${this.kBaseUrl}?si=${id}&cs=rgb&format=PNG&width=720&height=360`;
+    return `${kBaseUrl}?si=${id}&cs=rgb&format=PNG&width=720&height=360`;
   }
 
   /**
@@ -71,8 +71,8 @@ export class ImageProcessor {
     const normalizedLat = lat + 90;
 
     // Convert to percentages
-    const xPercent = normalizedLong / this.kLongitudeRange;
-    const yPercent = normalizedLat / this.kLatitudeRange;
+    const xPercent = normalizedLong / kLongitudeRange;
+    const yPercent = normalizedLat / kLatitudeRange;
 
     // Convert to pixel coordinates
     // Note: y is inverted because image coordinates go top-down
