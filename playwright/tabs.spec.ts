@@ -37,7 +37,8 @@ test.describe("Tab Navigation", () => {
     await aboutTab.click();
 
     // Check About tab content
-    const aboutContent = page.getByRole("tabpanel", { name: "About" }).getByText("NASA Earth Observatory");
+    const aboutText = "This plugin uses data from the NASA Earth Observations (NEO)";
+    const aboutContent = page.getByRole("tabpanel", { name: "About" }).getByText(aboutText);
     await expect(aboutContent).toBeVisible();
   });
 });
