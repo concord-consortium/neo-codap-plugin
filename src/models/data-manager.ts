@@ -8,7 +8,7 @@ import {
 } from "@concord-consortium/codap-plugin-api";
 import { DatasetConfig } from "./dataset-config";
 import datasetImages from "../data/neo-dataset-images.json";
-import { ImageProcessor } from "./image-processor";
+import { GeoImage } from "./geo-image";
 
 export interface DatasetImage {
   date: string;
@@ -75,12 +75,7 @@ const kMaxImages = 100;
 export type ProgressCallback = (current: number, total: number) => void;
 
 export class DataManager {
-  private imageProcessor: ImageProcessor;
   private progressCallback?: ProgressCallback;
-
-  constructor() {
-    this.imageProcessor = new ImageProcessor();
-  }
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -101,14 +96,15 @@ export class DataManager {
    * @returns Promise resolving to a DatasetItem with date and color
    */
   private async processImage(image: DatasetImage): Promise<DatasetItem> {
+    const geoImage = new GeoImage(image.id);
     try {
       const startTime = Date.now();
-      const img = await this.imageProcessor.loadImageFromNeoDatasetId(image.id);
-      const color = this.imageProcessor.extractColor(img, kDemoLocation.latitude, kDemoLocation.longitude);
+      await geoImage.loadFromNeoDataset();
+      const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
       const loadTime = Date.now() - startTime;
       return {
         date: image.date,
-        color: this.imageProcessor.rgbToHex(color),
+        color: GeoImage.rgbToHex(color),
         loadTime
       };
     } catch (error) {
@@ -120,6 +116,8 @@ export class DataManager {
         // Use negative value to indicate that the image was not processed
         loadTime: -1
       };
+    } finally {
+      geoImage.dispose();
     }
   }
 
