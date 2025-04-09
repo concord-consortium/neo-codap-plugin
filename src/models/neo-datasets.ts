@@ -7,9 +7,9 @@
  * of configs defines which datasets we currently support.
  * These configurations are defined directly in this file.
  *
- * The scaped information contains the max resolution of the dataset along with
+ * The scraped information contains the max resolution of the dataset along with
  * information about each image in the dataset. This image information can be used
- * to get a URL to download the image. The scaped information is updated by
+ * to get a URL to download the image. The scraped information is updated by
  * running the `scrape-neo-datasets.ts` script. It uses the list of configs to
  * know which datasets to scrape.
  *
