@@ -4,7 +4,7 @@ import {
   ClientNotification
 } from "@concord-consortium/codap-plugin-api";
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
-import { kDatasets } from "../../models/dataset-config";
+import { kNeoDatasets } from "../../models/neo-datasets";
 import { isNonEmbedded } from "../../utils/embed-check";
 import { DataManager, ProgressCallback } from "../../models/data-manager";
 
@@ -17,16 +17,15 @@ interface DatasetTabProps {
 export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   const [listenerNotification, setListenerNotification] = useState<string>();
   const notificationId = useId();
-  // Find the default selected dataset from our config
-  const defaultDataset = kDatasets.find(d => d.defaultSelected)?.id || kDatasets[0].id;
-  const [selectedDatasetId, setSelectedDatasetId] = useState<string>(defaultDataset);
+  const defaultNeoDatasetId = kNeoDatasets[0].id;
+  const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
   const [dataManager] = useState(() => {
     const manager = new DataManager();
     manager.setProgressCallback(progressCallback);
     return manager;
   });
 
-  const selectedDataset = kDatasets.find(d => d.id === selectedDatasetId);
+  const selectedNeoDataset = kNeoDatasets.find(d => d.id === selectedNeoDatasetId);
 
   useEffect(() => {
     if (isNonEmbedded()) {
@@ -42,23 +41,23 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   }, []);
 
   const handleDatasetChange = (datasetId: string) => {
-    setSelectedDatasetId(datasetId);
+    setSelectedNeoDatasetId(datasetId);
   };
 
   const handleGetData = async () => {
-    if (selectedDataset) {
-      await dataManager.getData(selectedDataset);
+    if (selectedNeoDataset) {
+      await dataManager.getData(selectedNeoDataset);
     }
   };
 
   return (
     <div className="App">
       <h1>NASA Earth Observatory</h1>
-      <DatasetSelector selectedDataset={selectedDatasetId} onDatasetChange={handleDatasetChange} />
-      {selectedDataset && (
+      <DatasetSelector selectedDataset={selectedNeoDatasetId} onDatasetChange={handleDatasetChange} />
+      {selectedNeoDataset && (
         <div className="dataset-info">
-          <h2>{selectedDataset.label}</h2>
-          <img src={selectedDataset.legendImage} alt={selectedDataset.label} />
+          <h2>{selectedNeoDataset.label}</h2>
+          <img src={selectedNeoDataset.legendImage} alt={`${selectedNeoDataset.label} legend`} />
           <button onClick={handleGetData} className="get-data-button">
             Get Data
           </button>

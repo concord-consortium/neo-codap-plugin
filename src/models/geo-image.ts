@@ -1,3 +1,5 @@
+import { NeoImageInfo } from "./neo-datasets";
+
 interface ColorValue {
   r: number;
   g: number;
@@ -11,7 +13,7 @@ interface PixelCoordinate {
 
 const kLongitudeRange = 360; // -180 to 180
 const kLatitudeRange = 180;  // -90 to 90
-const kBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
+const kNeoBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
 
 /**
  * GeoImage represents a single geographic image and provides methods to process it.
@@ -24,20 +26,16 @@ export class GeoImage {
 
   /**
    * Creates a new GeoImage instance
-   * @param id - Optional NEO dataset image ID. If provided, the image will be loaded from the NEO service.
    */
-  constructor(private readonly id?: string) {}
+  constructor(private readonly imageDef:NeoImageInfo) {}
 
   /**
    * Generates the URL for a NEO dataset image
    * @returns The complete URL for the image
    */
   private generateImageUrl(): string {
-    if (!this.id) {
-      throw new Error("No image ID provided");
-    }
-    // Default to 720x360 for the initial request, but we'll use actual dimensions for processing
-    return `${kBaseUrl}?si=${this.id}&cs=rgb&format=PNG&width=720&height=360`;
+    // FIXME: this always requests 720x360 but some datasets don't have that resolution
+    return `${kNeoBaseUrl}?si=${this.imageDef.id}&cs=rgb&format=PNG&width=720&height=360`;
   }
 
   /**
@@ -60,7 +58,7 @@ export class GeoImage {
    * @returns Promise resolving to this GeoImage instance for chaining
    */
   public async loadFromNeoDataset(): Promise<GeoImage> {
-    if (!this.id) {
+    if (!this.imageDef.id) {
       throw new Error("No image ID provided");
     }
     return this.loadFromUrl(this.generateImageUrl());

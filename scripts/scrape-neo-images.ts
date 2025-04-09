@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
-import { kDatasets } from "../src/models/dataset-config";
+import { kNeoDatasetConfigs } from "../src/models/neo-datasets";
 
 interface ImageInfo {
   date: string;
@@ -97,7 +97,7 @@ async function main() {
   const results: DatasetImages = {};
 
   // Process each dataset
-  for (const dataset of kDatasets) {
+  for (const dataset of kNeoDatasetConfigs) {
     console.log(`Starting to process dataset: ${dataset.id}`);
     results[dataset.id] = await processDataset(dataset.id);
   }

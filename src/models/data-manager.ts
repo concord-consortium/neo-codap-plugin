@@ -6,26 +6,9 @@ import {
   getDataContext,
   sendMessage
 } from "@concord-consortium/codap-plugin-api";
-import { DatasetConfig } from "./dataset-config";
-import datasetImages from "../data/neo-dataset-images.json";
+import { NeoDataset, NeoImageInfo } from "./neo-datasets";
 import { GeoImage } from "./geo-image";
 
-export interface DatasetImage {
-  date: string;
-  id: string;
-}
-
-interface DatasetData {
-  images: DatasetImage[];
-  maxResolution: {
-    width: number;
-    height: number;
-  };
-}
-
-type DatasetImagesType = Record<string, DatasetData>;
-
-const typedDatasetImages = datasetImages as DatasetImagesType;
 const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
 
@@ -95,13 +78,13 @@ export class DataManager {
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
-  private async processImage(image: DatasetImage): Promise<DatasetItem> {
-    const geoImage = new GeoImage(image.id);
+  private async processImage(image: NeoImageInfo): Promise<DatasetItem> {
+    const geoImage = new GeoImage(image);
     try {
       const startTime = Date.now();
       await geoImage.loadFromNeoDataset();
-      const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
       const loadTime = Date.now() - startTime;
+      const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
       return {
         date: image.date,
         color: GeoImage.rgbToHex(color),
@@ -121,19 +104,14 @@ export class DataManager {
     }
   }
 
-  async getData(dataset: DatasetConfig): Promise<void> {
-    const datasetData = typedDatasetImages[dataset.id];
-    if (!datasetData) {
-      throw new Error(`Dataset ${dataset.id} not found`);
-    }
-
+  async getData(neoDataset: NeoDataset): Promise<void> {
     try {
-      const totalImages = Math.min(datasetData.images.length, this.maxImages);
+      const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
       const items: DatasetItem[] = [];
 
-      const _processImage = async (img: DatasetImage) => {
+      const _processImage = async (img: NeoImageInfo) => {
         const item = await this.processImage(img);
         processedImages++;
         if (this.progressCallback) {
@@ -143,12 +121,13 @@ export class DataManager {
       };
 
       if (kParallelLoad) {
-        // Process all images in parallel but track progress
+        // Process all images in parallel
         await Promise.all(
-          datasetData.images.map(_processImage)
+          neoDataset.images.map(_processImage)
         );
       } else {
-        for (const img of datasetData.images) {
+        // Process all images serially
+        for (const img of neoDataset.images) {
           if (processedImages >= this.maxImages) {
             break;
           }
@@ -165,7 +144,7 @@ export class DataManager {
       }
 
       if (existingDataContext?.success || createDC?.success) {
-        await updateDataContextTitle(dataset.label);
+        await updateDataContextTitle(neoDataset.label);
         await this.createDatesCollection();
         await clearExistingCases();
         await createItems(kDataContextName, items);
