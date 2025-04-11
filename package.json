@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "NASA Earth Observatory CODAP plugin",
   "main": "index.js",
+  "type": "module",
   "browserslist": "> 0.2%, last 5 versions, Firefox ESR, not dead, not ie > 0",
   "jest": {
     "preset": "ts-jest/presets/js-with-ts",
@@ -58,7 +59,9 @@
     "test:full": "npm-run-all test test:playwright",
     "strings:pull": "node bin/pull-strings.js --prefix=DG.plugin --out=./src/strings.json",
     "install-local-docs": "npx degit chakra-ui/chakra-ui/apps/www/content#@chakra-ui/react@3.13.0 docs/local-docs/chakra-ui-v3",
-    "discover-services": "node scripts/list-bonjour-services.mjs"
+    "discover-services": "node scripts/list-bonjour-services.mjs",
+    "download-neo-images": "npx tsx scripts/download-neo-images.ts",
+    "scrape-neo-images": "npx tsx scripts/scrape-neo-images.ts"
   },
   "repository": {
     "type": "git",

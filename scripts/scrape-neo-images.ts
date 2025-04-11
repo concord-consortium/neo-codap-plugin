@@ -1,8 +1,9 @@
+// This can be run with `npx tsx scrape-neo-images.ts`
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
-import { kNeoDatasetConfigs } from "../src/models/neo-datasets";
+import { kNeoDatasetConfigs } from "../src/models/neo-dataset-configs.js";
 
 interface ImageInfo {
   date: string;

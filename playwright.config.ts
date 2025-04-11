@@ -1,6 +1,10 @@
 import { PlaywrightCoverageOptions } from "@bgotink/playwright-coverage";
 import { defineConfig, devices, ReporterDescription } from "@playwright/test";
-import path from "path";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Consider adding dotenv with a default value.
 // Also consider parsing the package.json to get the repository name.

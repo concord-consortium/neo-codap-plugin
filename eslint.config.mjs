@@ -201,7 +201,7 @@ export default typescriptEslint.config(
   },
   {
     name: "webpack configs",
-    files: ["webpack.config.js"],
+    files: ["webpack.config.cjs"],
     languageOptions: {
       globals: {
         ...globals.node
@@ -215,7 +215,7 @@ export default typescriptEslint.config(
   },
   {
     name: "postcss",
-    files: ["postcss.config.js"],
+    files: ["postcss.config.cjs"],
     languageOptions: {
       globals: {
         ...globals.node

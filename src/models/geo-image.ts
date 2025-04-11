@@ -1,4 +1,4 @@
-import { NeoImageInfo } from "./neo-datasets";
+import { NeoDataset, NeoImageInfo } from "./neo-datasets";
 
 interface ColorValue {
   r: number;
@@ -11,9 +11,14 @@ interface PixelCoordinate {
   y: number;
 }
 
+const kDefaultResolution = { width: 720, height: 360 };
+
 const kLongitudeRange = 360; // -180 to 180
 const kLatitudeRange = 180;  // -90 to 90
 const kNeoBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
+const kS3BaseUrl = "https://models-resources.concord.org/neo-images/v1";
+
+const kUseS3 = true;
 
 /**
  * GeoImage represents a single geographic image and provides methods to process it.
@@ -27,15 +32,38 @@ export class GeoImage {
   /**
    * Creates a new GeoImage instance
    */
-  constructor(private readonly imageDef:NeoImageInfo) {}
+  constructor(
+    private readonly imageInfo:NeoImageInfo,
+    private readonly neoDataset:NeoDataset
+  ) {}
+
+  private get resolution(): { width: number, height: number } {
+    const { maxResolution } = this.neoDataset;
+
+    // If maxResolution is smaller than our default, use maxResolution
+    if (maxResolution.width < kDefaultResolution.width ||
+        maxResolution.height < kDefaultResolution.height)
+    {
+      return maxResolution;
+    }
+    return kDefaultResolution;
+  }
+
+  private get resolutionString(): string {
+    return `${this.resolution.width}x${this.resolution.height}`;
+  }
 
   /**
    * Generates the URL for a NEO dataset image
    * @returns The complete URL for the image
    */
   private generateImageUrl(): string {
-    // FIXME: this always requests 720x360 but some datasets don't have that resolution
-    return `${kNeoBaseUrl}?si=${this.imageDef.id}&cs=rgb&format=PNG&width=720&height=360`;
+    if (kUseS3) {
+      return `${kS3BaseUrl}/${this.neoDataset.id}/${this.resolutionString}/${this.imageInfo.date}.png`;
+    }
+
+    return `${kNeoBaseUrl}?si=${this.imageInfo.id}&cs=rgb&format=PNG` +
+      `&width=${this.resolution.width}&height=${this.resolution.height}`;
   }
 
   /**
@@ -58,7 +86,7 @@ export class GeoImage {
    * @returns Promise resolving to this GeoImage instance for chaining
    */
   public async loadFromNeoDataset(): Promise<GeoImage> {
-    if (!this.imageDef.id) {
+    if (!this.imageInfo.id) {
       throw new Error("No image ID provided");
     }
     return this.loadFromUrl(this.generateImageUrl());

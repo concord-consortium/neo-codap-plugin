@@ -41,7 +41,7 @@ interface DatasetItem {
 // Change this to true to load images in parallel. The NEO site seems to
 // be rate limited. So loading the in parallel resulted in errors after
 // loading about 200 images.
-const kParallelLoad = false;
+const kParallelLoad = true;
 // Change this to increase the delay between loading images serially
 const kImageLoadDelay = 500;
 
@@ -78,8 +78,8 @@ export class DataManager {
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
-  private async processImage(image: NeoImageInfo): Promise<DatasetItem> {
-    const geoImage = new GeoImage(image);
+  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<DatasetItem> {
+    const geoImage = new GeoImage(image, neoDataset);
     try {
       const startTime = Date.now();
       await geoImage.loadFromNeoDataset();
@@ -112,7 +112,7 @@ export class DataManager {
       const items: DatasetItem[] = [];
 
       const _processImage = async (img: NeoImageInfo) => {
-        const item = await this.processImage(img);
+        const item = await this.processImage(img, neoDataset);
         processedImages++;
         if (this.progressCallback) {
           this.progressCallback(processedImages, totalImages);

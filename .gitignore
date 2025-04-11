@@ -6,12 +6,16 @@
 /playwright-report
 /test-results
 
+# data
+/neo-images
+
 # docs
 /docs/local-docs
 
 # production
 /build
 /dist
+/scripts/dist
 
 # OS
 .DS_Store
