@@ -9,7 +9,7 @@ import {
 import { NeoDataset, NeoImageInfo } from "./neo-datasets";
 import { GeoImage } from "./geo-image";
 
-const kDataContextName = "NEOPluginData";
+export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
