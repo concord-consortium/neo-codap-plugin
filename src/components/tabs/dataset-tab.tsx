@@ -6,9 +6,7 @@ import {
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { kNeoDatasets } from "../../models/neo-datasets";
 import { isNonEmbedded } from "../../utils/embed-check";
-import { DataManager, ProgressCallback } from "../../models/data-manager";
-
-const kDataContextName = "NEOPluginData";
+import { DataManager, kDataContextName, ProgressCallback } from "../../models/data-manager";
 
 interface DatasetTabProps {
   progressCallback: ProgressCallback;

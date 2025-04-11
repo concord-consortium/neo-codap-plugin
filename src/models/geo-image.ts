@@ -12,9 +12,12 @@ interface PixelCoordinate {
 }
 
 const kDefaultResolution = { width: 720, height: 360 };
-
-const kLongitudeRange = 360; // -180 to 180
-const kLatitudeRange = 180;  // -90 to 90
+const kLongitudeMin = -180;
+const kLongitudeMax = 180;
+const kLongitudeRange = kLongitudeMax - kLongitudeMin;
+const kLatitudeMin = -90;
+const kLatitudeMax = 90;
+const kLatitudeRange = kLatitudeMax - kLatitudeMin;
 const kNeoBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
 const kS3BaseUrl = "https://models-resources.concord.org/neo-images/v1";
 
@@ -112,10 +115,9 @@ export class GeoImage {
     }
 
     // Normalize longitude from -180...180 to 0...360
-    const normalizedLong = long + 180;
+    const normalizedLong = long - kLongitudeMin;
     // Normalize latitude from -90...90 to 0...180
-    const normalizedLat = lat + 90;
-
+    const normalizedLat = lat - kLatitudeMin;
     // Convert to percentages
     const xPercent = normalizedLong / kLongitudeRange;
     const yPercent = normalizedLat / kLatitudeRange;
