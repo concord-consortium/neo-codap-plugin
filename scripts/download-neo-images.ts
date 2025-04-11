@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
+import sharp from "sharp";
 import neoDatasets from "../src/data/neo-dataset-images.json" with { type: "json" };
 
 // To upload the files to S3
@@ -52,7 +53,24 @@ function constructImageUrl(imageId: string, resolution: Resolution): string {
   return `https://neo.gsfc.nasa.gov/servlet/RenderData?si=${imageId}&cs=rgb&format=PNG&width=${resolution.width}&height=${resolution.height}`;
 }
 
-function shouldDownloadFile(filePath: string): boolean {
+async function validatePngFile(filePath: string): Promise<boolean> {
+  try {
+    // Try to load and get metadata from the image
+    const metadata = await sharp(filePath).metadata();
+
+    // Check if it's a PNG and has valid dimensions
+    return metadata.format === "png" &&
+           metadata.width !== undefined &&
+           metadata.height !== undefined &&
+           metadata.width > 0 &&
+           metadata.height > 0;
+  } catch (error) {
+    console.error(`Error validating PNG file ${filePath}:`, error);
+    return false;
+  }
+}
+
+async function shouldDownloadFile(filePath: string): Promise<boolean> {
   if (!fs.existsSync(filePath)) {
     return true;
   }
@@ -60,7 +78,18 @@ function shouldDownloadFile(filePath: string): boolean {
   try {
     const stats = fs.statSync(filePath);
     // Return true if file is empty (0 bytes)
-    return stats.size === 0;
+    if (stats.size === 0) {
+      return true;
+    }
+
+    // Validate the existing PNG file
+    const isValidPng = await validatePngFile(filePath);
+    if (!isValidPng) {
+      console.log(`Invalid PNG file found at ${filePath}, will re-download`);
+      return true;
+    }
+
+    return false;
   } catch (error) {
     console.log(`Error checking file ${filePath}:`, error);
     // If we can't check the file for some reason, try downloading it again
@@ -84,13 +113,19 @@ async function downloadImageWithRetry(url: string, outputPath: string, retryCoun
     // Write the response body to the output file
     await pipeline(response.body, fs.createWriteStream(outputPath));
 
+    // Validate the downloaded PNG file
+    const isValidPng = await validatePngFile(outputPath);
+    if (!isValidPng) {
+      throw new Error("Downloaded file is not a valid PNG");
+    }
+
   } catch (error) {
-    // Clean up any partial downloads
+    // Clean up any partial or invalid downloads
     if (fs.existsSync(outputPath)) {
       try {
         fs.unlinkSync(outputPath);
       } catch (cleanupError) {
-        console.error(`Failed to clean up partial file ${outputPath}:`, cleanupError);
+        console.error(`Failed to clean up file ${outputPath}:`, cleanupError);
       }
     }
 
@@ -125,8 +160,9 @@ async function processDataset(datasetId: string, dataset: DatasetImages): Promis
     const image = images[i];
     const outputPath = path.join(datasetDir, `${image.date}.png`);
 
-    if (!shouldDownloadFile(outputPath)) {
-      console.log(`Skipping ${image.date}.png (already exists and not empty)`);
+    const shouldDownload = await shouldDownloadFile(outputPath);
+    if (!shouldDownload) {
+      console.log(`Skipping ${image.date}.png (already exists and valid)`);
       continue;
     }
 
@@ -137,9 +173,10 @@ async function processDataset(datasetId: string, dataset: DatasetImages): Promis
     try {
       await downloadImageWithRetry(url, outputPath);
 
-      // Verify the downloaded file isn't empty
-      if (shouldDownloadFile(outputPath)) {
-        throw new Error("Downloaded file is empty");
+      // Verify the downloaded file isn't empty and is valid
+      const shouldRedownload = await shouldDownloadFile(outputPath);
+      if (shouldRedownload) {
+        throw new Error("Downloaded file is empty or invalid");
       }
 
       console.log(`Successfully ${action.toLowerCase()} ${image.date}.png`);
@@ -150,7 +187,7 @@ async function processDataset(datasetId: string, dataset: DatasetImages): Promis
         try {
           fs.unlinkSync(outputPath);
         } catch (cleanupError) {
-          console.error(`Failed to clean up empty file ${outputPath}:`, cleanupError);
+          console.error(`Failed to clean up invalid file ${outputPath}:`, cleanupError);
         }
       }
     }
