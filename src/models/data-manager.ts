@@ -83,6 +83,10 @@ export class DataManager {
     try {
       const startTime = Date.now();
       await geoImage.loadFromNeoDataset();
+      // Note: This load time is not accurate when parallel loading is used because we are basically
+      // trying to download all of the images at the same time. The browser queues up the requests
+      // and only does batches of them at the same time. So for some images the loadTime will be
+      // close to the total time of all the images.
       const loadTime = Date.now() - startTime;
       const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
       return {
