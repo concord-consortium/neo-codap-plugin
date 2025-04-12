@@ -5,36 +5,6 @@
   "main": "index.js",
   "type": "module",
   "browserslist": "> 0.2%, last 5 versions, Firefox ESR, not dead, not ie > 0",
-  "jest": {
-    "preset": "ts-jest/presets/js-with-ts",
-    "setupFilesAfterEnv": [
-      "<rootDir>/src/test/setupTests.ts"
-    ],
-    "testEnvironment": "jsdom",
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/playwright/"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "src/utilities/test-utils.ts"
-    ],
-    "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
-      "\\.(css|less|sass|scss)$": "identity-obj-proxy"
-    },
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json"
-    ]
-  },
   "scripts": {
     "start": "webpack serve --server-type http",
     "start:secure": "webpack serve",
@@ -48,7 +18,7 @@
     "lint:style": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.style.config.mjs",
     "lint:style:fix": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.style.config.mjs --fix",
     "serve:top-test": "npx http-server top-test",
-    "test": "jest",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest",
     "test:all": "npm-run-all build test start",
     "test:coverage": "jest --coverage",
     "test:debug": "node --nolazy --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
@@ -78,6 +48,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
     "@eslint/js": "^9.22.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@jest/globals": "^29.7.0",
     "@jsdevtools/coverage-istanbul-loader": "^3.0.5",
     "@playwright/test": "^1.51.0",
     "@stylistic/eslint-plugin": "^4.2.0",

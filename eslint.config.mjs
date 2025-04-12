@@ -152,8 +152,7 @@ export default typescriptEslint.config(
     files: ["src/**/*.test.*"],
     languageOptions: {
       globals: {
-        ...globals.node,
-        ...globals.jest
+        ...globals.node
       }
     },
     // ts eslint's config function adds back in the `extends` feature of the older eslint

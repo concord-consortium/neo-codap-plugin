@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { jest } from "@jest/globals";
 
 // Add structuredClone polyfill for Chakra UI
 if (!window.structuredClone) {
