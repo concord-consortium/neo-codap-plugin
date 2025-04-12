@@ -1,5 +1,4 @@
 // This can be run with `npx tsx scrape-neo-images.ts`
-import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
@@ -98,13 +97,13 @@ async function main() {
   const results: DatasetImages = {};
 
   // Process each dataset
-  for (const dataset of kNeoDatasetConfigs) {
-    console.log(`Starting to process dataset: ${dataset.id}`);
-    results[dataset.id] = await processDataset(dataset.id);
-  }
+  // for (const dataset of kNeoDatasetConfigs) {
+  //   console.log(`Starting to process dataset: ${dataset.id}`);
+  //   results[dataset.id] = await processDataset(dataset.id);
+  // }
 
   // Uncomment to process a single dataset
-  // results["MOD_LSTD_CLIM_M"] = await processDataset("MOD_LSTD_CLIM_M");
+  results.MOD_LSTD_CLIM_M = await processDataset("MOD_LSTD_CLIM_M");
 
   // Make sure the data directory exists
   const dataDir = path.join(process.cwd(), "src", "data");
