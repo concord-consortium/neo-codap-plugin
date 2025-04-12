@@ -33,10 +33,6 @@ function extractDatasetCalls(html: string): {id: string, date: string}[] {
   }));
 }
 
-function constructImageUrl(id: string): string {
-  return `https://neo.gsfc.nasa.gov/servlet/RenderData?si=${id}&cs=rgb&format=PNG&width=720&height=360`;
-}
-
 function processYearHtml(yearHtml: string, imageInfos: ImageInfo[]) {
   const datasetCalls = extractDatasetCalls(yearHtml);
 
