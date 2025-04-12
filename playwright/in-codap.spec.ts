@@ -3,25 +3,23 @@ import { test } from "./fixtures";
 
 test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
-  await page.goto(`https://codap3.concord.org/?mouseSensor&di=${baseURL}`);
+  const diUrl = `${baseURL}?maxImages=2`;
+  await page.goto(`https://codap3.concord.org/?mouseSensor&di=${diUrl}`);
 
   const iframe = page.frameLocator(".codap-web-view-iframe");
-  await iframe.getByRole("button", { name: "Create some data" }).click();
-  await iframe.getByRole("button", { name: "Open Table" }).click();
+
+  // Select the land surface dataset because it has the fewest images
+  // We select by text instead of getByRole("radio", { name: "Land Surface Temperature [day]" })
+  // because Playwright has issues with radio inputs:
+  // - https://github.com/microsoft/playwright/issues/13470
+  // - https://github.com/microsoft/playwright/issues/17559
+  // - https://github.com/microsoft/playwright/issues/20893
+  const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature [day]");
+  await radio.click();
+
+  await iframe.getByRole("button", { name: "Get Data" }).click();
 
   // Make sure the table has something from our data in it
-  await expect(page.getByTestId("collection-table-grid")).toContainText("dog");
-
-  await iframe.getByRole("button", { name: "See getAllItems response" }).click();
-  const responseBox = iframe.getByRole("status", { name: "Response:" });
-  await expect(responseBox).toContainText(/"success": true/);
-  await expect(responseBox).toContainText(/"animal": "dog"/);
-
-  await page.getByTestId("collection-table-grid").getByText("dog").dblclick();
-  await page.getByTestId("cell-text-editor").fill("dogs");
-  await page.getByTestId("cell-text-editor").press("Enter");
-
-  const locationBox = iframe.getByRole("status", { name: "Listener Notification:" });
-  await expect(locationBox).toContainText(/"success":true/);
-  await expect(locationBox).toContainText(/"animal":"dogs"/);
+  await expect(page.getByTestId("collection-table-grid"), "Table should contain date")
+    .toContainText("1/1/2001", { timeout: 30000 });
 });

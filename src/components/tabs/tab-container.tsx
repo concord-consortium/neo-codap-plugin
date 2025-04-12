@@ -2,6 +2,7 @@ import React from "react";
 import { Tabs } from "@chakra-ui/react";
 import { AboutTab } from "./about-tab";
 import { DatasetTab } from "./dataset-tab";
+import { ProgressCallback } from "../../models/data-manager";
 
 const tabStyles = {
   borderTopLeftRadius: "13px",
@@ -40,7 +41,11 @@ const tabStyles = {
   }
 };
 
-export const TabContainer: React.FC = () => {
+interface TabContainerProps {
+  progressCallback: ProgressCallback;
+}
+
+export const TabContainer: React.FC<TabContainerProps> = ({ progressCallback }) => {
   return (
     <Tabs.Root defaultValue="dataset">
       <Tabs.List css={{ position: "relative", borderBottom: "1px solid #000" }}>
@@ -61,7 +66,7 @@ export const TabContainer: React.FC = () => {
         </Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="dataset">
-        <DatasetTab />
+        <DatasetTab progressCallback={progressCallback} />
       </Tabs.Content>
       <Tabs.Content value="about">
         <AboutTab />
