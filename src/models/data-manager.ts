@@ -6,8 +6,9 @@ import {
   getDataContext,
   sendMessage
 } from "@concord-consortium/codap-plugin-api";
-import { NeoDataset, NeoImageInfo } from "./neo-datasets";
 import { GeoImage } from "./geo-image";
+import { NeoDataset, NeoImageInfo } from "./neo-types";
+import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
@@ -22,14 +23,6 @@ async function updateDataContextTitle(title: string): Promise<void> {
   });
 }
 
-// This was the location of Boston, MA with a longitude of -71.0565
-// However that is right on the coast so it was picking up the water color
-// so we moved it a little further inland to 42.3555, -73
-const kDemoLocation = {
-  latitude: 42.3555,
-  longitude: -73
-};
-
 interface DatasetItem {
   date: string;
   // In the form #RRGGBB
@@ -37,23 +30,6 @@ interface DatasetItem {
   // The time to load the image in milliseconds
   loadTime: number;
 }
-
-// Change this to true to load images in parallel. The NEO site seems to
-// be rate limited. So loading the in parallel resulted in errors after
-// loading about 200 images.
-const kParallelLoad = true;
-// Change this to increase the delay between loading images serially
-const kImageLoadDelay = 500;
-
-// Change this to limit the number of images processed
-// With a 100ms delay the NEO site blocked my request after 201 images
-// and a total transfer size of 27.2 MB.
-// This blocking is for the whole site probably for my public IP address.
-// So to be safe I've updated the delay and limited the number of images.
-// To handle all of the images and get better speeds we'll need to download
-// them to S3 slowly, and then change the runtime code to fetch them from
-// there.
-const kMaxImages = 100;
 
 export type ProgressCallback = (current: number, total: number) => void;
 

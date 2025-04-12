@@ -3,28 +3,14 @@ import * as cheerio from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
 import { kNeoDatasetConfigs } from "../src/models/neo-dataset-configs.js";
-
-interface ImageInfo {
-  date: string;
-  id: string;
-}
-
-interface DatasetInfo {
-  images: ImageInfo[];
-  maxResolution: {
-    width: number;
-    height: number;
-  };
-}
-
-type DatasetImages = Record<string, DatasetInfo>;
+import { NeoImageInfo, ScapedNeoDatasetInfo, ScapedNeoDatasetMap } from "../src/models/neo-types.js";
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetch(url);
   return await response.text();
 }
 
-function extractDatasetCalls(html: string): {id: string, date: string}[] {
+function extractImageInfos(html: string): NeoImageInfo[] {
   const regex = /viewDataset\('(\d+)','(\d{4}-\d{2}-\d{2})'\)/g;
   const matches = [...html.matchAll(regex)];
   return matches.map(match => ({
@@ -33,23 +19,20 @@ function extractDatasetCalls(html: string): {id: string, date: string}[] {
   }));
 }
 
-function processYearHtml(yearHtml: string, imageInfos: ImageInfo[]) {
-  const datasetCalls = extractDatasetCalls(yearHtml);
+function processYearHtml(yearHtml: string, imageInfos: NeoImageInfo[]) {
+  const yearImageInfos = extractImageInfos(yearHtml);
 
-  for (const {id, date} of datasetCalls) {
-    imageInfos.push({
-      date,
-      id
-    });
+  for (const imageInfo of yearImageInfos) {
+    imageInfos.push(imageInfo);
 
     // Log each URL as we find it
-    console.log(`Found image for ${date}`);
+    console.log(`Found image for ${imageInfo.date}`);
   }
 }
 
-async function processDataset(datasetId: string): Promise<DatasetInfo> {
+async function processDataset(datasetId: string): Promise<ScapedNeoDatasetInfo> {
   const baseUrl = `https://neo.gsfc.nasa.gov/view.php?datasetId=${datasetId}`;
-  const imageInfos: ImageInfo[] = [];
+  const imageInfos: NeoImageInfo[] = [];
 
   // Get the initial page to get resolution and years
   const initialHtml = await fetchHtml(baseUrl);
@@ -90,7 +73,7 @@ async function processDataset(datasetId: string): Promise<DatasetInfo> {
 }
 
 async function main() {
-  const results: DatasetImages = {};
+  const results: ScapedNeoDatasetMap = {};
 
   // Process each dataset
   for (const dataset of kNeoDatasetConfigs) {

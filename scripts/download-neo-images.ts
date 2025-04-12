@@ -2,55 +2,31 @@ import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
 import sharp from "sharp";
-import neoDatasets from "../src/data/neo-dataset-images.json" with { type: "json" };
+import { kNeoDatasets } from "../src/models/neo-datasets.js";
+import { NeoDataset } from "../src/models/neo-types.js";
 
 // To upload the files to S3
 // aws s3 sync neo-images s3://models-resources/neo-images/v1 --exclude "*.DS_Store" --cache-control "max-age=31536000"
 
-const OUTPUT_DIR = "neo-images";
-const DEFAULT_RESOLUTION = { width: 720, height: 360 };
-const DELAY_BETWEEN_DOWNLOADS = 2000; // milliseconds
-const ONLY_DOWNLOAD_FIRST_DATASET = false;
-const NUMBER_OF_IMAGES_TO_DOWNLOAD = 400;
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 5000; // 5 seconds
+const outputDir = "neo-images";
+const delayBetweenDownloads = 2000; // milliseconds
+const maxRetries = 3;
+const initialRetryDelay = 5000; // 5 seconds
 
-interface NeoImage {
-  date: string;
-  id: string;
-}
+/**
+ * Setting this to true is useful to testing so the script doesn't take too long
+ * to run.
+ */
+const onlyDownloadFirstDataset = false;
 
-interface Resolution {
-  width: number;
-  height: number;
-}
-
-interface DatasetImages {
-  images: NeoImage[];
-  maxResolution: Resolution;
-}
-
-type Datasets = Record<string, DatasetImages>;
+/**
+ * When only downloading the first dataset, this value limits how many images
+ * are downloaded.
+ */
+const maxNumberOfImagesToDownload = 10;
 
 async function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function getResolution(maxResolution: Resolution): Resolution {
-  // If maxResolution is smaller than our default, use maxResolution
-  if (maxResolution.width < DEFAULT_RESOLUTION.width ||
-      maxResolution.height < DEFAULT_RESOLUTION.height) {
-    return maxResolution;
-  }
-  return DEFAULT_RESOLUTION;
-}
-
-function getResolutionString(resolution: Resolution): string {
-  return `${resolution.width}x${resolution.height}`;
-}
-
-function constructImageUrl(imageId: string, resolution: Resolution): string {
-  return `https://neo.gsfc.nasa.gov/servlet/RenderData?si=${imageId}&cs=rgb&format=PNG&width=${resolution.width}&height=${resolution.height}`;
 }
 
 async function validatePngFile(filePath: string): Promise<boolean> {
@@ -100,7 +76,7 @@ async function shouldDownloadFile(filePath: string): Promise<boolean> {
 async function downloadImageWithRetry(url: string, outputPath: string, retryCount = 0): Promise<void> {
   try {
     const response = await fetch(url);
-    console.log(`Response status: ${response.status} (attempt ${retryCount + 1}/${MAX_RETRIES + 1})`);
+    console.log(`Response status: ${response.status} (attempt ${retryCount + 1}/${maxRetries + 1})`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -129,24 +105,24 @@ async function downloadImageWithRetry(url: string, outputPath: string, retryCoun
       }
     }
 
-    if (retryCount < MAX_RETRIES) {
-      const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+    if (retryCount < maxRetries) {
+      const retryDelay = initialRetryDelay * Math.pow(2, retryCount);
       console.log(
-        `Download failed (attempt ${retryCount + 1}/${MAX_RETRIES + 1}). Retrying in ${retryDelay/1000} seconds...`
+        `Download failed (attempt ${retryCount + 1}/${maxRetries + 1}). Retrying in ${retryDelay/1000} seconds...`
       );
       await delay(retryDelay);
       return downloadImageWithRetry(url, outputPath, retryCount + 1);
     }
 
-    console.error(`Error downloading image from ${url} after ${MAX_RETRIES + 1} attempts:`, error.message);
+    console.error(`Error downloading image from ${url} after ${maxRetries + 1} attempts:`, error.message);
     throw error;
   }
 }
 
-async function processDataset(datasetId: string, dataset: DatasetImages): Promise<void> {
-  const resolution = getResolution(dataset.maxResolution);
-  const resolutionString = getResolutionString(resolution);
-  const datasetDir = path.join(OUTPUT_DIR, datasetId, resolutionString);
+async function processDataset(dataset: NeoDataset): Promise<void> {
+  const { resolutionString } = dataset;
+  const datasetId = dataset.id;
+  const datasetDir = path.join(outputDir, datasetId, resolutionString);
   const images = dataset.images;
 
   // Create directories if they don't exist
@@ -166,7 +142,8 @@ async function processDataset(datasetId: string, dataset: DatasetImages): Promis
       continue;
     }
 
-    const url = constructImageUrl(image.id, resolution);
+    const url = dataset.getNeoSiteImageUrl(image.id);
+
     const action = fs.existsSync(outputPath) ? "Re-downloading" : "Downloading";
     console.log(`${action} ${image.date}.png (${i + 1}/${images.length})`);
 
@@ -193,28 +170,25 @@ async function processDataset(datasetId: string, dataset: DatasetImages): Promis
     }
 
     // Add delay between downloads to avoid rate limiting
-    await delay(DELAY_BETWEEN_DOWNLOADS);
+    await delay(delayBetweenDownloads);
   }
 }
 
 async function main() {
-  const datasets = neoDatasets as Datasets;
-
   // Create base output directory if it doesn't exist
-  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.mkdirSync(outputDir, { recursive: true });
 
-  if (ONLY_DOWNLOAD_FIRST_DATASET) {
-    const datasetId = Object.keys(datasets)[0];
-    const dataset = datasets[datasetId];
+  if (onlyDownloadFirstDataset) {
+    const dataset = kNeoDatasets[0];
     const limitedDataset = {
       ...dataset,
-      images: dataset.images.slice(0, NUMBER_OF_IMAGES_TO_DOWNLOAD)
+      images: dataset.images.slice(0, maxNumberOfImagesToDownload)
     };
-    await processDataset(datasetId, limitedDataset);
+    await processDataset(limitedDataset);
   } else {
     // Process each dataset
-    for (const [datasetId, dataset] of Object.entries(datasets)) {
-      await processDataset(datasetId, dataset);
+    for (const dataset of kNeoDatasets) {
+      await processDataset(dataset);
     }
   }
 }

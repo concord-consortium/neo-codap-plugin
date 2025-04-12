@@ -1,4 +1,11 @@
-import { NeoDataset, NeoImageInfo } from "./neo-datasets";
+import {
+  NeoDataset,
+  NeoImageInfo,
+  kLatitudeMin,
+  kLatitudeRange,
+  kLongitudeMin,
+  kLongitudeRange} from "./neo-types";
+import { kUseS3 } from "./config";
 
 interface ColorValue {
   r: number;
@@ -10,18 +17,6 @@ interface PixelCoordinate {
   x: number;
   y: number;
 }
-
-const kDefaultResolution = { width: 720, height: 360 };
-const kLongitudeMin = -180;
-const kLongitudeMax = 180;
-const kLongitudeRange = kLongitudeMax - kLongitudeMin;
-const kLatitudeMin = -90;
-const kLatitudeMax = 90;
-const kLatitudeRange = kLatitudeMax - kLatitudeMin;
-const kNeoBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
-const kS3BaseUrl = "https://models-resources.concord.org/neo-images/v1";
-
-const kUseS3 = true;
 
 /**
  * GeoImage represents a single geographic image and provides methods to process it.
@@ -36,37 +31,19 @@ export class GeoImage {
    * Creates a new GeoImage instance
    */
   constructor(
-    private readonly imageInfo:NeoImageInfo,
-    private readonly neoDataset:NeoDataset
+    private readonly imageInfo: NeoImageInfo,
+    private readonly neoDataset: NeoDataset
   ) {}
-
-  private get resolution(): { width: number, height: number } {
-    const { maxResolution } = this.neoDataset;
-
-    // If maxResolution is smaller than our default, use maxResolution
-    if (maxResolution.width < kDefaultResolution.width ||
-        maxResolution.height < kDefaultResolution.height)
-    {
-      return maxResolution;
-    }
-    return kDefaultResolution;
-  }
-
-  private get resolutionString(): string {
-    return `${this.resolution.width}x${this.resolution.height}`;
-  }
 
   /**
    * Generates the URL for a NEO dataset image
    * @returns The complete URL for the image
    */
-  private generateImageUrl(): string {
+  private get imageUrl(): string {
     if (kUseS3) {
-      return `${kS3BaseUrl}/${this.neoDataset.id}/${this.resolutionString}/${this.imageInfo.date}.png`;
+      return this.neoDataset.getS3ImageUrl(this.imageInfo.date);
     }
-
-    return `${kNeoBaseUrl}?si=${this.imageInfo.id}&cs=rgb&format=PNG` +
-      `&width=${this.resolution.width}&height=${this.resolution.height}`;
+    return this.neoDataset.getNeoSiteImageUrl(this.imageInfo.id);
   }
 
   /**
@@ -85,14 +62,11 @@ export class GeoImage {
   }
 
   /**
-   * Loads an image from the NEO service using the ID provided in the constructor
+   * Loads an image using the imageInfo provided in the constructor
    * @returns Promise resolving to this GeoImage instance for chaining
    */
   public async loadFromNeoDataset(): Promise<GeoImage> {
-    if (!this.imageInfo.id) {
-      throw new Error("No image ID provided");
-    }
-    return this.loadFromUrl(this.generateImageUrl());
+    return this.loadFromUrl(this.imageUrl);
   }
 
   /**

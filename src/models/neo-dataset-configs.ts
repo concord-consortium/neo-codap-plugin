@@ -1,19 +1,8 @@
-/**
- * Configuration for a selectable dataset
- */
-export interface NeoDatasetConfig {
-  /** Unique identifier for the dataset */
-  id: string;
-  /** Display label shown to users */
-  label: string;
-  /** Path to the legend image for the dataset */
-  legendImage: string;
-}
+import { NeoDatasetConfig } from "./neo-types";
 
 /**
  * The NEO dataset configs that we support
  */
-
 export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "GPM_3IMERGM",

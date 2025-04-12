@@ -16,45 +16,17 @@
  * TODO: more of the information could be scraped. So then the configuration
  * could just be the dataset id.
  */
-import _scrapedNeoDatasets from "../data/neo-dataset-images.json";
-import { kNeoDatasetConfigs, NeoDatasetConfig } from "./neo-dataset-configs";
-
-export interface NeoImageInfo {
-  date: string;
-  id: string;
-}
-
-interface ScapedNeoDatasetInfo {
-  images: NeoImageInfo[];
-  maxResolution: {
-    width: number;
-    height: number;
-  };
-}
-
-type ScapedNeoDatasetMap = Record<string, ScapedNeoDatasetInfo>;
+import _scrapedNeoDatasets from "../data/neo-dataset-images.json" with { type: "json" };
+import { kNeoDatasetConfigs } from "./neo-dataset-configs";
+import { NeoDataset, ScapedNeoDatasetMap } from "./neo-types";
 
 const scapedNeoDatasets = _scrapedNeoDatasets as ScapedNeoDatasetMap;
-
-export interface NeoDataset extends NeoDatasetConfig {
-  /** Maximum resolution of the dataset */
-  maxResolution: {
-    width: number;
-    height: number;
-  };
-  /** Information about images in the dataset */
-  images: NeoImageInfo[];
-}
 
 /**
  * The NEO datasets that we support. This combines the dataset configuration with
  * the scraped information about the dataset.
  */
-export const kNeoDatasets = kNeoDatasetConfigs.map(config => ({
-  id: config.id,
-  label: config.label,
-  legendImage: config.legendImage,
-  maxResolution: scapedNeoDatasets[config.id].maxResolution,
-  images: scapedNeoDatasets[config.id].images
-}));
+export const kNeoDatasets = kNeoDatasetConfigs.map(config =>
+  new NeoDataset(config, scapedNeoDatasets[config.id])
+);
 
