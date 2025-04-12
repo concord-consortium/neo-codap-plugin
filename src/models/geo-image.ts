@@ -90,7 +90,7 @@ export class GeoImage {
     // Normalize longitude from -180...180 to 0...360
     const normalizedLong = long - kLongitudeMin;
     // Normalize latitude from -90...90 to 0...180
-    const normalizedLat = lat - kLongitudeMax;
+    const normalizedLat = lat - kLatitudeMin;
     // Convert to percentages
     const xPercent = normalizedLong / kLongitudeRange;
     const yPercent = normalizedLat / kLatitudeRange;
