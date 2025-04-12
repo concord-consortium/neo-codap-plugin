@@ -5,6 +5,9 @@ const tsJestPreset = createDefaultEsmPreset();
 
 const config: Config = {
   ...tsJestPreset,
+  // The default coverage provider is babel, but we need to use v8
+  // because babel didn't handle the `import ... with {}` syntax
+  coverageProvider: "v8",
   setupFilesAfterEnv: [
     "<rootDir>/src/test/setupTests.ts"
   ],
