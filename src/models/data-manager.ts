@@ -38,7 +38,8 @@ export type ProgressCallback = (current: number, total: number) => void;
 export class DataManager {
   private progressCallback?: ProgressCallback;
   // Local cache of dataset items that are sent to CODAP
-  private items: DatasetItem[] = [];
+  items: DatasetItem[] = [];
+  private neoDataset: NeoDataset | undefined;
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -95,6 +96,7 @@ export class DataManager {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
+      this.neoDataset = neoDataset;
       this.items = [];
 
       const _processImage = async (img: NeoImageInfo) => {
@@ -169,5 +171,13 @@ export class DataManager {
       geotiffUrl: item.url,
       title,
     });
+  }
+
+  public async updateMapWithItemIndex(index: number): Promise<void> {
+    if (index < 0 || index >= this.items.length) {
+      throw new Error("Invalid item index");
+    }
+    const item = this.items[index];
+    await this.createOrUpdateMap(`${this.neoDataset?.label} - ${item.date}`, item);
   }
 }

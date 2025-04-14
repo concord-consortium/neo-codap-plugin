@@ -7,6 +7,7 @@ import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { kNeoDatasets } from "../../models/neo-datasets";
 import { isNonEmbedded } from "../../utils/embed-check";
 import { DataManager, kDataContextName, ProgressCallback } from "../../models/data-manager";
+import { HStack, Slider, Stack, Text } from "@chakra-ui/react";
 
 interface DatasetTabProps {
   progressCallback: ProgressCallback;
@@ -17,6 +18,8 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   const notificationId = useId();
   const defaultNeoDatasetId = kNeoDatasets[0].id;
   const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [hasLoadedData, setHasLoadedData] = useState<boolean>(false);
   const [dataManager] = useState(() => {
     const manager = new DataManager();
     manager.setProgressCallback(progressCallback);
@@ -45,7 +48,14 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   const handleGetData = async () => {
     if (selectedNeoDataset) {
       await dataManager.getData(selectedNeoDataset);
+      setHasLoadedData(true);
+      setCurrentImageIndex(0);
     }
+  };
+
+  const handleSliderChange = async (value: number) => {
+    setCurrentImageIndex(value);
+    await dataManager.updateMapWithItemIndex(value);
   };
 
   return (
@@ -59,6 +69,29 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
           <button onClick={handleGetData} className="get-data-button">
             Get Data
           </button>
+          {hasLoadedData && (
+            <Stack gap="4" marginTop="4">
+              <Text>Select Date:</Text>
+              <Slider.Root
+                value={[currentImageIndex]}
+                onValueChange={(e) => handleSliderChange(e.value[0])}
+                min={0}
+                max={dataManager.items.length - 1}
+                step={1}
+              >
+                <HStack justify="space-between">
+                  <Slider.Label>Image</Slider.Label>
+                  <Slider.ValueText />
+                </HStack>
+                <Slider.Control>
+                  <Slider.Track>
+                    <Slider.Range />
+                  </Slider.Track>
+                  <Slider.Thumbs />
+                </Slider.Control>
+              </Slider.Root>
+            </Stack>
+          )}
         </div>
       )}
       <div className="response-area">
