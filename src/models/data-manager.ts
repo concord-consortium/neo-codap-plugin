@@ -37,6 +37,8 @@ export type ProgressCallback = (current: number, total: number) => void;
 
 export class DataManager {
   private progressCallback?: ProgressCallback;
+  // Local cache of dataset items that are sent to CODAP
+  private items: DatasetItem[] = [];
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -93,7 +95,7 @@ export class DataManager {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
-      const items: DatasetItem[] = [];
+      this.items = [];
 
       const _processImage = async (img: NeoImageInfo) => {
         const item = await this.processImage(img, neoDataset);
@@ -101,7 +103,7 @@ export class DataManager {
         if (this.progressCallback) {
           this.progressCallback(processedImages, totalImages);
         }
-        items.push(item);
+        this.items.push(item);
       };
 
       if (kParallelLoad) {
@@ -134,9 +136,9 @@ export class DataManager {
       await updateDataContextTitle(neoDataset.label);
       await this.createDatesCollection();
       await clearExistingCases();
-      await createItems(kDataContextName, items);
+      await createItems(kDataContextName, this.items);
       await createTable(kDataContextName);
-      await this.createOrUpdateMap(neoDataset.label, items[0]);
+      await this.createOrUpdateMap(neoDataset.label, this.items[0]);
 
     } catch (error) {
       console.error("Failed to process dataset:", error);
