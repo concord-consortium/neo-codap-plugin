@@ -12,6 +12,7 @@ import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./con
 
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
+const kMapComponentName = "NeoMap";
 
 async function clearExistingCases(): Promise<void> {
   await sendMessage("delete", `dataContext[${kDataContextName}].allCases`);
@@ -29,6 +30,7 @@ interface DatasetItem {
   color: string;
   // The time to load the image in milliseconds
   loadTime: number;
+  url: string;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -68,7 +70,8 @@ export class DataManager {
       return {
         date: image.date,
         color: GeoImage.rgbToHex(color),
-        loadTime
+        loadTime,
+        url: geoImage.imageUrl
       };
     } catch (error) {
       console.error(`Failed to process image ${image.id}:`, error);
@@ -77,7 +80,8 @@ export class DataManager {
         date: image.date,
         color: "#000000",
         // Use negative value to indicate that the image was not processed
-        loadTime: -1
+        loadTime: -1,
+        url: geoImage.imageUrl
       };
     } finally {
       geoImage.dispose();
@@ -123,13 +127,17 @@ export class DataManager {
         createDC = await createDataContext(kDataContextName);
       }
 
-      if (existingDataContext?.success || createDC?.success) {
-        await updateDataContextTitle(neoDataset.label);
-        await this.createDatesCollection();
-        await clearExistingCases();
-        await createItems(kDataContextName, items);
-        await createTable(kDataContextName);
+      if (!(existingDataContext?.success || createDC?.success)) {
+        return;
       }
+
+      await updateDataContextTitle(neoDataset.label);
+      await this.createDatesCollection();
+      await clearExistingCases();
+      await createItems(kDataContextName, items);
+      await createTable(kDataContextName);
+      await this.createOrUpdateMap(neoDataset.label, items[0]);
+
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
@@ -140,7 +148,24 @@ export class DataManager {
     await createNewCollection(kDataContextName, kCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
-      { name: "loadTime", type: "numeric" }
+      { name: "loadTime", type: "numeric" },
+      { name: "url", type: "categorical" }
     ]);
+  }
+
+  private async createOrUpdateMap(title: string, item: DatasetItem): Promise<void> {
+    const existingMap = await sendMessage("get", `component[${kMapComponentName}]`);
+    if (!existingMap.success) {
+      await sendMessage("create", "component", {
+        type: "map",
+        name: kMapComponentName,
+        title,
+      });
+    }
+
+    await sendMessage("update", `component[${kMapComponentName}]`, {
+      geotiffUrl: item.url,
+      title,
+    });
   }
 }

@@ -39,7 +39,7 @@ export class GeoImage {
    * Generates the URL for a NEO dataset image
    * @returns The complete URL for the image
    */
-  private get imageUrl(): string {
+  get imageUrl(): string {
     if (kUseS3) {
       return this.neoDataset.getS3ImageUrl(this.imageInfo.date);
     }
