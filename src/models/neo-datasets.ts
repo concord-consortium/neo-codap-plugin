@@ -18,15 +18,15 @@
  */
 import _scrapedNeoDatasets from "../data/neo-dataset-images.json" with { type: "json" };
 import { kNeoDatasetConfigs } from "./neo-dataset-configs";
-import { NeoDataset, ScapedNeoDatasetMap } from "./neo-types";
+import { NeoDataset, ScrapedNeoDatasetMap } from "./neo-types";
 
-const scapedNeoDatasets = _scrapedNeoDatasets as ScapedNeoDatasetMap;
+const scrapedNeoDatasets = _scrapedNeoDatasets as ScrapedNeoDatasetMap;
 
 /**
  * The NEO datasets that we support. This combines the dataset configuration with
  * the scraped information about the dataset.
  */
 export const kNeoDatasets = kNeoDatasetConfigs.map(config =>
-  new NeoDataset(config, scapedNeoDatasets[config.id])
+  new NeoDataset(config, scrapedNeoDatasets[config.id])
 );
 

@@ -14,12 +14,12 @@ export interface NeoImageInfo {
   id: string;
 }
 
-export interface ScapedNeoDatasetInfo {
+export interface ScrapedNeoDatasetInfo {
   images: NeoImageInfo[];
   maxResolution: Resolution;
 }
 
-export type ScapedNeoDatasetMap = Record<string, ScapedNeoDatasetInfo>;
+export type ScrapedNeoDatasetMap = Record<string, ScrapedNeoDatasetInfo>;
 
 export class NeoDataset {
   id: string;
@@ -28,7 +28,7 @@ export class NeoDataset {
   maxResolution: Resolution;
   images: NeoImageInfo[];
 
-  constructor(config: NeoDatasetConfig, scrapedInfo: ScapedNeoDatasetInfo) {
+  constructor(config: NeoDatasetConfig, scrapedInfo: ScrapedNeoDatasetInfo) {
     this.id = config.id;
     this.label = config.label;
     this.legendImage = config.legendImage;
