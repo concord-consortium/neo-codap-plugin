@@ -89,7 +89,7 @@ export class DataManager {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
-      const items: DatasetItem[] = [];
+      const itemMap = new Map<string, DatasetItem>();
 
       const _processImage = async (img: NeoImageInfo) => {
         const item = await this.processImage(img, neoDataset);
@@ -97,7 +97,7 @@ export class DataManager {
         if (this.progressCallback) {
           this.progressCallback(processedImages, totalImages);
         }
-        items.push(item);
+        itemMap.set(img.date, item);
       };
 
       if (kParallelLoad) {
@@ -116,6 +116,9 @@ export class DataManager {
         }
       }
 
+      const dates = neoDataset.images.map(img => img.date);
+      const sortedDates = dates.sort();
+      const items = sortedDates.map(date => itemMap.get(date) as DatasetItem);
       const existingDataContext = await getDataContext(kDataContextName);
 
       let createDC;
