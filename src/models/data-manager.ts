@@ -1,4 +1,6 @@
 import {
+  ClientNotification,
+  codapInterface,
   createDataContext,
   createItems,
   createNewCollection,
@@ -13,7 +15,7 @@ import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./con
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
 const kMapComponentName = "NeoMap";
-
+const kSliderComponentName = "NeoSlider";
 async function clearExistingCases(): Promise<void> {
   await sendMessage("delete", `dataContext[${kDataContextName}].allCases`);
 }
@@ -35,11 +37,20 @@ interface DatasetItem {
 
 export type ProgressCallback = (current: number, total: number) => void;
 
+function getTimestamp(date: string): number {
+  return new Date(date).getTime() / 1000;
+}
+
 export class DataManager {
   private progressCallback?: ProgressCallback;
   // Local cache of dataset items that are sent to CODAP
   items: DatasetItem[] = [];
   private neoDataset: NeoDataset | undefined;
+
+  constructor() {
+    this.handleGlobalUpdate = this.handleGlobalUpdate.bind(this);
+    codapInterface.on("notify", "global[Date]", this.handleGlobalUpdate);
+  }
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -98,6 +109,7 @@ export class DataManager {
 
       this.neoDataset = neoDataset;
       this.items = [];
+      const itemMap = new Map<string, DatasetItem>();
 
       const _processImage = async (img: NeoImageInfo) => {
         const item = await this.processImage(img, neoDataset);
@@ -105,7 +117,7 @@ export class DataManager {
         if (this.progressCallback) {
           this.progressCallback(processedImages, totalImages);
         }
-        this.items.push(item);
+        itemMap.set(item.date, item);
       };
 
       if (kParallelLoad) {
@@ -124,6 +136,10 @@ export class DataManager {
         }
       }
 
+      const dates = neoDataset.images.map(img => img.date);
+      const sortedDates = dates.sort();
+      this.items = sortedDates.map(date => itemMap.get(date) as DatasetItem);
+
       const existingDataContext = await getDataContext(kDataContextName);
 
       let createDC;
@@ -141,10 +157,34 @@ export class DataManager {
       await createItems(kDataContextName, this.items);
       await createTable(kDataContextName);
       await this.createOrUpdateMap(neoDataset.label, this.items[0]);
-
+      await this.createOrUpdateSlider();
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
+    }
+  }
+
+  private handleGlobalUpdate(notification: ClientNotification) {
+    // convert to number
+    const timestamp = Number(notification.values.globalValue);
+    console.log("timestamp inf")
+    const itemIndex = this.items.findIndex((item, index) => {
+      const itemTimestamp = getTimestamp(item.date);
+      const nextItemIndex = index + 1;
+      const nextItemTimestamp = nextItemIndex >= this.items.length
+        ? Number.MAX_SAFE_INTEGER
+        : getTimestamp(this.items[nextItemIndex].date);
+      return timestamp >= itemTimestamp && timestamp < nextItemTimestamp;
+    });
+    console.log("handleGlobalUpdate", {
+      notification, timestamp,itemIndex,
+      timestampInfo: {
+        firstItem: getTimestamp(this.items[0].date),
+        lastItem: getTimestamp(this.items[this.items.length - 1].date)
+      }
+     });
+    if (itemIndex !== -1) {
+      this.updateMapWithItemIndex(itemIndex);
     }
   }
 
@@ -172,6 +212,35 @@ export class DataManager {
       title,
     });
   }
+
+  private async createOrUpdateSlider(): Promise<void> {
+    const existingGlobal = await sendMessage("get", `global[Date]`);
+    if (!existingGlobal.success) {
+      await sendMessage("create", "global", {
+        name: "Date",
+        value: new Date(this.items[0].date).getTime(),
+      });
+    }
+
+    const existingSlider = await sendMessage("get", `component[${kSliderComponentName}]`);
+    if (!existingSlider.success) {
+      await sendMessage("create", "component", {
+        type: "slider",
+        title: kSliderComponentName,
+        globalValueName: "Date",
+        lowerBound: getTimestamp(this.items[0].date),
+        upperBound: getTimestamp(this.items[this.items.length - 1].date),
+        value: getTimestamp(this.items[0].date)
+      });
+    }
+
+    await sendMessage("update", `component[${kSliderComponentName}]`, {
+      lowerBound: getTimestamp(this.items[0].date),
+      upperBound: getTimestamp(this.items[this.items.length - 1].date),
+      value: getTimestamp(this.items[0].date)
+    });
+  }
+
 
   public async updateMapWithItemIndex(index: number): Promise<void> {
     if (index < 0 || index >= this.items.length) {
