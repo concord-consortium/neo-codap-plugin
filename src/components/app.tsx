@@ -2,16 +2,9 @@ import React, { useEffect, useState } from "react";
 import "./app.css";
 import { Provider } from "./ui/provider";
 import { TabContainer } from "./tabs/tab-container";
-import { initializePlugin } from "@concord-consortium/codap-plugin-api";
 import { isNonEmbedded } from "../utils/embed-check";
 import { ProgressOverlay } from "./ui/progress-overlay";
-
-const kPluginName = "Sample Plugin";
-const kVersion = "0.0.1";
-const kInitialDimensions = {
-  width: 380,
-  height: 680
-};
+import { initializeNeoPlugin } from "../utils/codap-utils";
 
 export const App = () => {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -22,7 +15,7 @@ export const App = () => {
       return; // Skip initialization if noEmbed parameter exists
     }
 
-    initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
+    initializeNeoPlugin();
   }, []);
 
   return (
