@@ -3,6 +3,7 @@ import { makeAutoObservable } from "mobx";
 import {
   kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName
 } from "../data/constants";
+import { NeoDataset } from "./neo-types";
 
 interface IMapPin {
   color: string;
@@ -12,10 +13,17 @@ interface IMapPin {
 }
 
 class PluginState {
+  neoDataset: NeoDataset | undefined;
+  neoDatasetName = "";
   pins: IMapPin[] = [];
 
   constructor() {
     makeAutoObservable(this);
+  }
+
+  setNeoDataset(neoDataset: NeoDataset | undefined) {
+    this.neoDataset = neoDataset;
+    this.neoDatasetName = neoDataset?.label ?? "";
   }
 
   async updatePins() {

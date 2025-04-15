@@ -9,6 +9,7 @@ import {
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
+import { pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
@@ -84,7 +85,10 @@ export class DataManager {
     }
   }
 
-  async getData(neoDataset: NeoDataset): Promise<void> {
+  async getData(): Promise<void> {
+    const { neoDataset } = pluginState;
+    if (!neoDataset) return;
+
     try {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;

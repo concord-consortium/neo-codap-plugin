@@ -3,10 +3,12 @@ import {
   addDataContextChangeListener,
   ClientNotification
 } from "@concord-consortium/codap-plugin-api";
+import { reaction } from "mobx";
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { kNeoDatasets } from "../../models/neo-datasets";
 import { isNonEmbedded } from "../../utils/embed-check";
 import { DataManager, kDataContextName, ProgressCallback } from "../../models/data-manager";
+import { pluginState } from "../../models/plugin-state";
 
 interface DatasetTabProps {
   progressCallback: ProgressCallback;
@@ -24,6 +26,15 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   });
 
   const selectedNeoDataset = kNeoDatasets.find(d => d.id === selectedNeoDatasetId);
+
+  // Update the neo data when the state changes
+  useEffect(() => reaction(
+    () => {
+      const { neoDatasetName, pins } = pluginState;
+      return { neoDatasetName, pins };
+    },
+    () => dataManager.getData()
+  ));
 
   useEffect(() => {
     if (isNonEmbedded()) {
@@ -43,9 +54,7 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
   };
 
   const handleGetData = async () => {
-    if (selectedNeoDataset) {
-      await dataManager.getData(selectedNeoDataset);
-    }
+    if (selectedNeoDataset) pluginState.setNeoDataset(selectedNeoDataset);
   };
 
   return (
