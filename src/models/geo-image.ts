@@ -1,4 +1,12 @@
-import { NeoImageInfo } from "./neo-datasets";
+import {
+  NeoDataset,
+  NeoImageInfo,
+  kLatitudeMin,
+  kLatitudeRange,
+  kLongitudeMin,
+  kLongitudeRange
+} from "./neo-types";
+import { kUseS3 } from "./config";
 
 interface ColorValue {
   r: number;
@@ -10,14 +18,6 @@ interface PixelCoordinate {
   x: number;
   y: number;
 }
-
-const kLongitudeMin = -180;
-const kLongitudeMax = 180;
-const kLongitudeRange = kLongitudeMax - kLongitudeMin;
-const kLatitudeMin = -90;
-const kLatitudeMax = 90;
-const kLatitudeRange = kLatitudeMax - kLatitudeMin;
-const kNeoBaseUrl = "https://neo.gsfc.nasa.gov/servlet/RenderData";
 
 /**
  * GeoImage represents a single geographic image and provides methods to process it.
@@ -31,15 +31,20 @@ export class GeoImage {
   /**
    * Creates a new GeoImage instance
    */
-  constructor(private readonly imageDef:NeoImageInfo) {}
+  constructor(
+    private readonly imageInfo: NeoImageInfo,
+    private readonly neoDataset: NeoDataset
+  ) {}
 
   /**
    * Generates the URL for a NEO dataset image
    * @returns The complete URL for the image
    */
-  private generateImageUrl(): string {
-    // FIXME: this always requests 720x360 but some datasets don't have that resolution
-    return `${kNeoBaseUrl}?si=${this.imageDef.id}&cs=rgb&format=PNG&width=720&height=360`;
+  private get imageUrl(): string {
+    if (kUseS3) {
+      return this.neoDataset.getS3ImageUrl(this.imageInfo.date);
+    }
+    return this.neoDataset.getNeoSiteImageUrl(this.imageInfo.id);
   }
 
   /**
@@ -58,14 +63,11 @@ export class GeoImage {
   }
 
   /**
-   * Loads an image from the NEO service using the ID provided in the constructor
+   * Loads an image using the imageInfo provided in the constructor
    * @returns Promise resolving to this GeoImage instance for chaining
    */
   public async loadFromNeoDataset(): Promise<GeoImage> {
-    if (!this.imageDef.id) {
-      throw new Error("No image ID provided");
-    }
-    return this.loadFromUrl(this.generateImageUrl());
+    return this.loadFromUrl(this.imageUrl);
   }
 
   /**

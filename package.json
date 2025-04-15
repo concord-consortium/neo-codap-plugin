@@ -3,37 +3,8 @@
   "version": "0.0.1",
   "description": "NASA Earth Observatory CODAP plugin",
   "main": "index.js",
+  "type": "module",
   "browserslist": "> 0.2%, last 5 versions, Firefox ESR, not dead, not ie > 0",
-  "jest": {
-    "preset": "ts-jest/presets/js-with-ts",
-    "setupFilesAfterEnv": [
-      "<rootDir>/src/test/setupTests.ts"
-    ],
-    "testEnvironment": "jsdom",
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/playwright/"
-    ],
-    "coveragePathIgnorePatterns": [
-      "/node_modules/",
-      "src/utilities/test-utils.ts"
-    ],
-    "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
-      "\\.(css|less|sass|scss)$": "identity-obj-proxy"
-    },
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json"
-    ]
-  },
   "scripts": {
     "start": "webpack serve --server-type http",
     "start:secure": "webpack serve",
@@ -47,18 +18,20 @@
     "lint:style": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.style.config.mjs",
     "lint:style:fix": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.style.config.mjs --fix",
     "serve:top-test": "npx http-server top-test",
-    "test": "jest",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest",
     "test:all": "npm-run-all build test start",
-    "test:coverage": "jest --coverage",
-    "test:debug": "node --nolazy --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
-    "test:watch": "jest --watch",
-    "test:coverage:watch": "jest --coverage --watchAll",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --coverage",
+    "test:debug": "node --experimental-vm-modules --nolazy --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --watch",
+    "test:coverage:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --coverage --watchAll",
     "test:playwright": "playwright test",
     "test:playwright:open": "playwright test --ui",
     "test:full": "npm-run-all test test:playwright",
     "strings:pull": "node bin/pull-strings.js --prefix=DG.plugin --out=./src/strings.json",
     "install-local-docs": "npx degit chakra-ui/chakra-ui/apps/www/content#@chakra-ui/react@3.13.0 docs/local-docs/chakra-ui-v3",
-    "discover-services": "node scripts/list-bonjour-services.mjs"
+    "discover-services": "node scripts/list-bonjour-services.mjs",
+    "download-neo-images": "npx tsx scripts/download-neo-images.ts",
+    "scrape-neo-images": "npx tsx scripts/scrape-neo-images.ts"
   },
   "repository": {
     "type": "git",
@@ -75,6 +48,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
     "@eslint/js": "^9.22.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@jest/globals": "^29.7.0",
     "@jsdevtools/coverage-istanbul-loader": "^3.0.5",
     "@playwright/test": "^1.51.0",
     "@stylistic/eslint-plugin": "^4.2.0",
@@ -87,6 +61,7 @@
     "@types/node": "^22.13.9",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
+    "@types/sharp": "^0.31.1",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
     "@typescript-eslint/parser": "^8.26.1",
     "autoprefixer": "^10.4.21",
@@ -116,12 +91,12 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "mini-css-extract-plugin": "^2.9.2",
-    "node-fetch": "^3.3.2",
     "npm-run-all": "^4.1.5",
     "postcss-loader": "^8.1.1",
     "sass": "^1.86.0",
     "sass-loader": "^16.0.5",
     "script-loader": "^0.7.2",
+    "sharp": "^0.34.1",
     "style-loader": "^4.0.0",
     "ts-jest": "^29.2.6",
     "ts-loader": "^9.5.1",

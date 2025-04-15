@@ -152,8 +152,7 @@ export default typescriptEslint.config(
     files: ["src/**/*.test.*"],
     languageOptions: {
       globals: {
-        ...globals.node,
-        ...globals.jest
+        ...globals.node
       }
     },
     // ts eslint's config function adds back in the `extends` feature of the older eslint
@@ -201,7 +200,7 @@ export default typescriptEslint.config(
   },
   {
     name: "webpack configs",
-    files: ["webpack.config.js"],
+    files: ["webpack.config.cjs"],
     languageOptions: {
       globals: {
         ...globals.node
@@ -215,7 +214,7 @@ export default typescriptEslint.config(
   },
   {
     name: "postcss",
-    files: ["postcss.config.js"],
+    files: ["postcss.config.cjs"],
     languageOptions: {
       globals: {
         ...globals.node

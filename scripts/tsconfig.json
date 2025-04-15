@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "./dist/",
     "module": "nodenext",
     "resolveJsonModule": true,
     "types": ["node"]
