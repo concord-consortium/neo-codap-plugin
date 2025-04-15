@@ -4,7 +4,8 @@ import {
   kLatitudeMin,
   kLatitudeRange,
   kLongitudeMin,
-  kLongitudeRange} from "./neo-types";
+  kLongitudeRange
+} from "./neo-types";
 import { kUseS3 } from "./config";
 
 interface ColorValue {
