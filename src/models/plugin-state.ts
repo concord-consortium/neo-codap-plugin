@@ -12,6 +12,10 @@ interface IMapPin {
   long: number;
 }
 
+export function pinLabel(pin: IMapPin) {
+  return `${pin.lat.toFixed(2)}, ${pin.long.toFixed(2)}`;
+}
+
 class PluginState {
   neoDataset: NeoDataset | undefined;
   neoDatasetName = "";

@@ -8,8 +8,8 @@ import {
 } from "@concord-consortium/codap-plugin-api";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
-import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
-import { pluginState } from "./plugin-state";
+import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
+import { pinLabel, pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
@@ -28,8 +28,10 @@ interface DatasetItem {
   date: string;
   // In the form #RRGGBB
   color: string;
+  label: string;
   // The time to load the image in milliseconds
   loadTime: number;
+  pinColor: string;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -55,8 +57,9 @@ export class DataManager {
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
-  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<DatasetItem> {
+  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<Map<string, DatasetItem>> {
     const geoImage = new GeoImage(image, neoDataset);
+    const items = new Map<string, DatasetItem>();
     try {
       const startTime = Date.now();
       await geoImage.loadFromNeoDataset();
@@ -65,24 +68,24 @@ export class DataManager {
       // and only does batches of them at the same time. So for some images the loadTime will be
       // close to the total time of all the images.
       const loadTime = Date.now() - startTime;
-      const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
-      return {
-        date: image.date,
-        color: GeoImage.rgbToHex(color),
-        loadTime
-      };
+
+      pluginState.pins.forEach(pin => {
+        const color = geoImage.extractColor(pin.lat, pin.long);
+        const label = pinLabel(pin);
+        items.set(label, {
+          date: image.date,
+          color: GeoImage.rgbToHex(color),
+          label,
+          loadTime,
+          pinColor: pin.color
+        });
+      });
     } catch (error) {
       console.error(`Failed to process image ${image.id}:`, error);
-      // Return a default color for failed images
-      return {
-        date: image.date,
-        color: "#000000",
-        // Use negative value to indicate that the image was not processed
-        loadTime: -1
-      };
     } finally {
       geoImage.dispose();
     }
+    return items;
   }
 
   async getData(): Promise<void> {
@@ -93,15 +96,20 @@ export class DataManager {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
-      const itemMap = new Map<string, DatasetItem>();
+      const itemMap = new Map<string, Map<string, DatasetItem>>();
 
       const _processImage = async (img: NeoImageInfo) => {
-        const item = await this.processImage(img, neoDataset);
+        const imageItems = await this.processImage(img, neoDataset);
         processedImages++;
         if (this.progressCallback) {
           this.progressCallback(processedImages, totalImages);
         }
-        itemMap.set(img.date, item);
+        imageItems.forEach((item, label) => {
+          if (!itemMap.has(label)) {
+            itemMap.set(label, new Map());
+          }
+          itemMap.get(label)?.set(img.date, item);
+        });
       };
 
       if (kParallelLoad) {
@@ -122,7 +130,14 @@ export class DataManager {
 
       const dates = neoDataset.images.map(img => img.date);
       const sortedDates = dates.sort();
-      const items = sortedDates.map(date => itemMap.get(date) as DatasetItem);
+      const items: DatasetItem[] = [];
+      itemMap.forEach(pinItems => {
+        const sortedItems = sortedDates.map(date => pinItems.get(date));
+        sortedItems.forEach(sortedItem => {
+          if (sortedItem) items.push(sortedItem);
+        });
+      });
+
       const existingDataContext = await getDataContext(kDataContextName);
 
       let createDC;
@@ -147,7 +162,9 @@ export class DataManager {
     await createNewCollection(kDataContextName, kCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
-      { name: "loadTime", type: "numeric" }
+      { name: "label" },
+      { name: "loadTime", type: "numeric" },
+      { name: "pinColor", type: "color" }
     ]);
   }
 }
