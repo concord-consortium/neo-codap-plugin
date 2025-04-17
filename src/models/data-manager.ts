@@ -6,9 +6,11 @@ import {
   getDataContext,
   sendMessage
 } from "@concord-consortium/codap-plugin-api";
+import { createGraph } from "../utils/codap-helper";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
+import { estimateValueFromHex } from "../utils/color-to-value-helper";
 
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
@@ -27,6 +29,8 @@ interface DatasetItem {
   date: string;
   // In the form #RRGGBB
   color: string;
+  // The estimated value based on legend
+  value: number;
   // The time to load the image in milliseconds
   loadTime: number;
 }
@@ -35,6 +39,7 @@ export type ProgressCallback = (current: number, total: number) => void;
 
 export class DataManager {
   private progressCallback?: ProgressCallback;
+  ;
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -65,9 +70,12 @@ export class DataManager {
       // close to the total time of all the images.
       const loadTime = Date.now() - startTime;
       const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
+      const colorHex = GeoImage.rgbToHex(color);
+      const value = estimateValueFromHex(neoDataset.label, colorHex);
       return {
         date: image.date,
-        color: GeoImage.rgbToHex(color),
+        color: colorHex,
+        value,
         loadTime
       };
     } catch (error) {
@@ -76,6 +84,7 @@ export class DataManager {
       return {
         date: image.date,
         color: "#000000",
+        value: 0,
         // Use negative value to indicate that the image was not processed
         loadTime: -1
       };
@@ -132,6 +141,7 @@ export class DataManager {
         await clearExistingCases();
         await createItems(kDataContextName, items);
         await createTable(kDataContextName);
+        await createGraph(kDataContextName, neoDataset.label, "date", "value");
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
@@ -143,6 +153,7 @@ export class DataManager {
     await createNewCollection(kDataContextName, kCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
+      { name: "value", type: "numeric" },
       { name: "loadTime", type: "numeric" }
     ]);
   }
