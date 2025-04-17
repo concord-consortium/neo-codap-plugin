@@ -18,7 +18,7 @@ interface DatasetTabProps {
 }
 
 export const DatasetTab: React.FC<DatasetTabProps> = ({ current, total, isVisible, progressCallback }) => {
-  const [listenerNotification, setListenerNotification] = useState<string>();
+  const [, setListenerNotification] = useState<string>();
   const defaultNeoDatasetId = kNeoDatasets[0].id;
   const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
   const [isFetching, setIsFetching] = useState(false);
