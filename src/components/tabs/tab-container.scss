@@ -1,0 +1,24 @@
+.tabs-root {
+  height: 27px;
+
+  .tabs-list {
+    width: 315px;
+    min-height: 27px !important;
+    height: 27px;
+    margin: 0 72px 0 2px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom: 1px solid #777;
+
+    .tabs-trigger {
+      height: 27px;
+      &.dataset {
+        margin-left: 2px;
+      }
+      &[data-selected] {
+        border-color: #777 !important;
+        border-bottom: none;
+      }
+    }
+  }
+}

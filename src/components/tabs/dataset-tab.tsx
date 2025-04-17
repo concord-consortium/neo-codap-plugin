@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   addDataContextChangeListener,
   ClientNotification
@@ -8,15 +8,20 @@ import { kNeoDatasets } from "../../models/neo-datasets";
 import { isNonEmbedded } from "../../utils/embed-check";
 import { DataManager, kDataContextName, ProgressCallback } from "../../models/data-manager";
 
+import "./dataset-tab.scss";
+import { Box, Stack } from "@chakra-ui/react";
 interface DatasetTabProps {
+  current: number;
+  total: number;
+  isVisible: boolean;
   progressCallback: ProgressCallback;
 }
 
-export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
+export const DatasetTab: React.FC<DatasetTabProps> = ({ current, total, isVisible, progressCallback }) => {
   const [listenerNotification, setListenerNotification] = useState<string>();
-  const notificationId = useId();
   const defaultNeoDatasetId = kNeoDatasets[0].id;
   const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
+  const [isFetching, setIsFetching] = useState(false);
   const [dataManager] = useState(() => {
     const manager = new DataManager();
     manager.setProgressCallback(progressCallback);
@@ -44,29 +49,48 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
 
   const handleGetData = async () => {
     if (selectedNeoDataset) {
+      setIsFetching(true);
       await dataManager.getData(selectedNeoDataset);
+      setIsFetching(false);
     }
   };
 
   return (
     <div className="App">
-      <h1>NASA Earth Observatory</h1>
+      <h1>NASA Earth Data</h1>
       <DatasetSelector selectedDataset={selectedNeoDatasetId} onDatasetChange={handleDatasetChange} />
-      {selectedNeoDataset && (
-        <div className="dataset-info">
-          <h2>{selectedNeoDataset.label}</h2>
-          <img src={selectedNeoDataset.legendImage} alt={`${selectedNeoDataset.label} legend`} />
-          <button onClick={handleGetData} className="get-data-button">
-            Get Data
+      <img src={selectedNeoDataset?.legendImage} alt={`${selectedNeoDataset?.label} legend`} />
+
+      <div className="divider" />
+      <div className="footer">
+        {isVisible && <ProgressContainer current={current} total={total}/>}
+        <div className="footer-buttons-container">
+          <button className="get-data-button" disabled={isFetching} onClick={handleGetData}
+            title="Fetch data from NASA and send to CODAP">
+              Get Data
           </button>
         </div>
-      )}
-      <div className="response-area">
-        <label htmlFor={notificationId}>Listener Notification:</label>
-        <output id={notificationId} className="response">
-          { listenerNotification && listenerNotification }
-        </output>
       </div>
     </div>
   );
+};
+
+interface IProgressContainerProps {
+  current: number;
+  total: number;
+}
+
+const ProgressContainer: React.FC<IProgressContainerProps> = ({current, total}) => {
+  const percentage = Math.round((current / total) * 100);
+
+  return (
+    <Stack direction="column" gap={2} className="progress-container">
+        <Box width="150px" fontSize="xs" color="gray.600" textAlign="center">
+          Loading images: {current}/{total}
+        </Box>
+        <Box w="100%" h="2" bgColor="gray.100" borderRadius="full" overflow="hidden">
+          <Box w={`${percentage}%`} h="100%" bgColor="blue.500" transition="width 0.2s"
+            borderRadius="full"/>
+        </Box>
+    </Stack>);
 };
