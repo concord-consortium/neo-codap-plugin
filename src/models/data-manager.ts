@@ -96,6 +96,7 @@ export class DataManager {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
+      // itemMap[pinLabel][date] = DatasetItem
       const itemMap = new Map<string, Map<string, DatasetItem>>();
 
       this.progressCallback?.(0, totalImages);
