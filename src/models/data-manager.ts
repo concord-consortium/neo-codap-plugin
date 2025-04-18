@@ -9,7 +9,8 @@ import {
 import { createGraph } from "../utils/codap-helper";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
-import { kDemoLocation, kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
+import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
+import { pinLabel, pluginState } from "./plugin-state";
 import { estimateValueFromHex } from "../utils/color-to-value-helper";
 
 export const kDataContextName = "NEOPluginData";
@@ -29,10 +30,12 @@ interface DatasetItem {
   date: string;
   // In the form #RRGGBB
   color: string;
+  label: string;
   // The estimated value based on legend
   value: number;
   // The time to load the image in milliseconds
   loadTime: number;
+  pinColor: string;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -59,8 +62,9 @@ export class DataManager {
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
-  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<DatasetItem> {
+  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<Map<string, DatasetItem>> {
     const geoImage = new GeoImage(image, neoDataset);
+    const items = new Map<string, DatasetItem>();
     try {
       const startTime = Date.now();
       await geoImage.loadFromNeoDataset();
@@ -69,44 +73,52 @@ export class DataManager {
       // and only does batches of them at the same time. So for some images the loadTime will be
       // close to the total time of all the images.
       const loadTime = Date.now() - startTime;
-      const color = geoImage.extractColor(kDemoLocation.latitude, kDemoLocation.longitude);
-      const colorHex = GeoImage.rgbToHex(color);
-      const value = estimateValueFromHex(neoDataset.label, colorHex);
-      return {
-        date: image.date,
-        color: colorHex,
-        value,
-        loadTime
-      };
+
+      pluginState.pins.forEach(pin => {
+        const color = geoImage.extractColor(pin.lat, pin.long);
+        const label = pinLabel(pin);
+        const colorHex = GeoImage.rgbToHex(color);
+        const value = estimateValueFromHex(neoDataset.label, colorHex);
+        items.set(label, {
+          date: image.date,
+          color: GeoImage.rgbToHex(color),
+          label,
+          value,
+          loadTime,
+          pinColor: pin.color
+        });
+      });
     } catch (error) {
       console.error(`Failed to process image ${image.id}:`, error);
-      // Return a default color for failed images
-      return {
-        date: image.date,
-        color: "#000000",
-        value: 0,
-        // Use negative value to indicate that the image was not processed
-        loadTime: -1
-      };
     } finally {
       geoImage.dispose();
     }
+    return items;
   }
 
-  async getData(neoDataset: NeoDataset): Promise<void> {
+  async getData(): Promise<void> {
+    const { neoDataset } = pluginState;
+    if (!neoDataset) return;
+
     try {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
-      const itemMap = new Map<string, DatasetItem>();
+      // itemMap[pinLabel][date] = DatasetItem
+      const itemMap = new Map<string, Map<string, DatasetItem>>();
+
+      this.progressCallback?.(0, totalImages);
 
       const _processImage = async (img: NeoImageInfo) => {
-        const item = await this.processImage(img, neoDataset);
+        const imageItems = await this.processImage(img, neoDataset);
         processedImages++;
-        if (this.progressCallback) {
-          this.progressCallback(processedImages, totalImages);
-        }
-        itemMap.set(img.date, item);
+        this.progressCallback?.(processedImages, totalImages);
+        imageItems.forEach((item, label) => {
+          if (!itemMap.has(label)) {
+            itemMap.set(label, new Map());
+          }
+          itemMap.get(label)?.set(img.date, item);
+        });
       };
 
       if (kParallelLoad) {
@@ -127,7 +139,14 @@ export class DataManager {
 
       const dates = neoDataset.images.map(img => img.date);
       const sortedDates = dates.sort();
-      const items = sortedDates.map(date => itemMap.get(date) as DatasetItem);
+      const items: DatasetItem[] = [];
+      itemMap.forEach(pinItems => {
+        const sortedItems = sortedDates.map(date => pinItems.get(date));
+        sortedItems.forEach(sortedItem => {
+          if (sortedItem) items.push(sortedItem);
+        });
+      });
+
       const existingDataContext = await getDataContext(kDataContextName);
       const existingComponents = await sendMessage("get", "componentList");
       const existingGraph = existingComponents.values
@@ -158,8 +177,10 @@ export class DataManager {
     await createNewCollection(kDataContextName, kCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
+      { name: "label" },
       { name: "value", type: "numeric" },
-      { name: "loadTime", type: "numeric" }
+      { name: "loadTime", type: "numeric" },
+      { name: "pinColor", type: "color" }
     ]);
   }
 }

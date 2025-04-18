@@ -2,6 +2,8 @@ import { Box, Stack, RadioGroup } from "@chakra-ui/react";
 import React from "react";
 import { kNeoDatasets  } from "../../models/neo-datasets";
 
+import "./dataset-selector.scss";
+
 interface DatasetSelectorProps {
   /** The currently selected dataset */
   selectedDataset: string;
@@ -17,12 +19,14 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({ selectedDatase
   };
 
   return (
-    <Box>
+    <Box className="dataset-selector-container">
       <RadioGroup.Root
         value={selectedDataset}
         onValueChange={handleDatasetChange}
         aria-label="Dataset Selection"
         size="sm"
+        variant={"solid"}
+        colorPalette="cyan"
       >
         <Stack direction="column" gap={3}>
           {kNeoDatasets.map((dataset) => (
