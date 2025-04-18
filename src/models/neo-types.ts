@@ -1,5 +1,6 @@
 import { kDefaultResolution, kNeoBaseUrl, kS3BaseUrl, Resolution } from "./config";
 
+export type PaletteToValueFunction = (index: number) => number | null;
 export interface NeoDatasetConfig {
   /** Unique identifier for the dataset */
   id: string;
@@ -7,6 +8,8 @@ export interface NeoDatasetConfig {
   label: string;
   /** Path to the legend image for the dataset */
   legendImage: string;
+  /** Function to convert palette index to physical value */
+  paletteToValue: PaletteToValueFunction;
 }
 
 export interface NeoImageInfo {
@@ -27,11 +30,13 @@ export class NeoDataset {
   legendImage: string;
   maxResolution: Resolution;
   images: NeoImageInfo[];
+  paletteToValue: PaletteToValueFunction;
 
   constructor(config: NeoDatasetConfig, scrapedInfo: ScrapedNeoDatasetInfo) {
     this.id = config.id;
     this.label = config.label;
     this.legendImage = config.legendImage;
+    this.paletteToValue = config.paletteToValue;
     this.maxResolution = scrapedInfo.maxResolution;
     this.images = scrapedInfo.images;
   }

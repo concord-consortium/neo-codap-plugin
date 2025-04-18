@@ -40,7 +40,7 @@ export class GeoImage {
    * Generates the URL for a NEO dataset image
    * @returns The complete URL for the image
    */
-  private get imageUrl(): string {
+  get imageUrl(): string {
     if (kUseS3) {
       return this.neoDataset.getS3ImageUrl(this.imageInfo.date);
     }
@@ -156,6 +156,16 @@ export class GeoImage {
   public static rgbToHex(color: ColorValue): string {
     const toHex = (n: number) => n.toString(16).padStart(2, "0");
     return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
+  }
+
+  /**
+   * Converts RGB values to a single number
+   * @param color - RGB color value
+   * @returns Number representation of the RGB color
+   */
+  public static rgbToNumber(color: ColorValue): number {
+    // eslint-disable-next-line no-bitwise
+    return (color.r << 16) | (color.g << 8) | color.b;
   }
 
   /**
