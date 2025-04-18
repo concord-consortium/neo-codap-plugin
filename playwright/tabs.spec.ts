@@ -30,7 +30,7 @@ test.describe("Tab Navigation", () => {
     // Check Dataset tab content
     const datasetTab = page.getByRole("tab", { name: "Dataset" });
     await expect(datasetTab).toBeVisible();
-    await expect(page.getByRole("heading", { name: "NASA Earth Observatory" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "NASA Earth Data" })).toBeVisible();
 
     // Switch to About tab
     const aboutTab = page.getByRole("tab", { name: "About" });

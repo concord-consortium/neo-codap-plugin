@@ -98,12 +98,12 @@ export class DataManager {
 
       const itemMap = new Map<string, Map<string, DatasetItem>>();
 
+      this.progressCallback?.(0, totalImages);
+
       const _processImage = async (img: NeoImageInfo) => {
         const imageItems = await this.processImage(img, neoDataset);
         processedImages++;
-        if (this.progressCallback) {
-          this.progressCallback(processedImages, totalImages);
-        }
+        this.progressCallback?.(processedImages, totalImages);
         imageItems.forEach((item, label) => {
           if (!itemMap.has(label)) {
             itemMap.set(label, new Map());

@@ -1,8 +1,8 @@
-export const kPluginName = "Sample Plugin";
+export const kPluginName = "NASA Earth Data Plugin";
 export const kVersion = "0.0.1";
 export const kInitialDimensions = {
-  width: 380,
-  height: 680
+  width: 315,
+  height: 410
 };
 
 export const kPinDataContextName = "Map Pins";

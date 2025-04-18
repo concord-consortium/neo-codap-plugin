@@ -1,27 +1,30 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   addDataContextChangeListener,
   ClientNotification
 } from "@concord-consortium/codap-plugin-api";
 import { reaction } from "mobx";
-import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { kNeoDatasets } from "../../models/neo-datasets";
-import { isNonEmbedded } from "../../utils/embed-check";
-import { DataManager, kDataContextName, ProgressCallback } from "../../models/data-manager";
+import { DataManager, kDataContextName } from "../../models/data-manager";
 import { pluginState } from "../../models/plugin-state";
+import { isNonEmbedded } from "../../utils/embed-check";
+import { DatasetSelector } from "../dataset-selector/dataset-selector";
+import { ProgressContainer } from "./progress-container";
 
-interface DatasetTabProps {
-  progressCallback: ProgressCallback;
-}
+import "./dataset-tab.scss";
 
-export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
-  const [listenerNotification, setListenerNotification] = useState<string>();
-  const notificationId = useId();
+export const DatasetTab: React.FC = () => {
+  const [, setListenerNotification] = useState<string>();
   const defaultNeoDatasetId = kNeoDatasets[0].id;
   const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
+  const [progress, setProgress] = useState({ current: -1, total: 0 });
+  const [showProgress, setShowProgress] = useState(false);
   const [dataManager] = useState(() => {
     const manager = new DataManager();
-    manager.setProgressCallback(progressCallback);
+    manager.setProgressCallback((current, total) => {
+      setProgress({ current, total });
+      setShowProgress(current >= 0 && current < total);
+    });
     return manager;
   });
 
@@ -59,22 +62,20 @@ export const DatasetTab: React.FC<DatasetTabProps> = ({ progressCallback }) => {
 
   return (
     <div className="App">
-      <h1>NASA Earth Observatory</h1>
+      <h1>NASA Earth Data</h1>
       <DatasetSelector selectedDataset={selectedNeoDatasetId} onDatasetChange={handleDatasetChange} />
-      {selectedNeoDataset && (
-        <div className="dataset-info">
-          <h2>{selectedNeoDataset.label}</h2>
-          <img src={selectedNeoDataset.legendImage} alt={`${selectedNeoDataset.label} legend`} />
-          <button onClick={handleGetData} className="get-data-button">
-            Get Data
+      <div className="legend-container">
+        <img src={selectedNeoDataset?.legendImage} alt={`${selectedNeoDataset?.label} legend`} />
+      </div>
+      <div className="divider" />
+      <div className="footer">
+        {showProgress && <ProgressContainer current={progress.current} total={progress.total}/>}
+        <div className="footer-buttons-container">
+          <button className="get-data-button" disabled={showProgress} onClick={handleGetData}
+            title="Fetch data from NASA and send to CODAP">
+              Get Data
           </button>
         </div>
-      )}
-      <div className="response-area">
-        <label htmlFor={notificationId}>Listener Notification:</label>
-        <output id={notificationId} className="response">
-          { listenerNotification && listenerNotification }
-        </output>
       </div>
     </div>
   );
