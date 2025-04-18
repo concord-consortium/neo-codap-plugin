@@ -4,6 +4,7 @@ import {
   ClientNotification
 } from "@concord-consortium/codap-plugin-api";
 import { reaction } from "mobx";
+import { observer } from "mobx-react-lite";
 import { kNeoDatasets } from "../../models/neo-datasets";
 import { DataManager, kDataContextName } from "../../models/data-manager";
 import { pluginState } from "../../models/plugin-state";
@@ -13,7 +14,7 @@ import { ProgressContainer } from "./progress-container";
 
 import "./dataset-tab.scss";
 
-export const DatasetTab: React.FC = () => {
+export const DatasetTab = observer(function DatasetTab() {
   const [, setListenerNotification] = useState<string>();
   const defaultNeoDatasetId = kNeoDatasets[0].id;
   const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
@@ -69,7 +70,10 @@ export const DatasetTab: React.FC = () => {
       </div>
       <div className="divider" />
       <div className="footer">
-        {showProgress && <ProgressContainer current={progress.current} total={progress.total}/>}
+        {showProgress
+          ? <ProgressContainer current={progress.current} total={progress.total}/>
+          : <div data-testid="number-of-locations">Locations: {pluginState.pins.length}</div>
+        }
         <div className="footer-buttons-container">
           <button className="get-data-button" disabled={showProgress} onClick={handleGetData}
             title="Fetch data from NASA and send to CODAP">
@@ -79,4 +83,4 @@ export const DatasetTab: React.FC = () => {
       </div>
     </div>
   );
-};
+});

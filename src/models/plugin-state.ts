@@ -1,4 +1,4 @@
-import { getAllItems } from "@concord-consortium/codap-plugin-api";
+import { getAllItems, IResult } from "@concord-consortium/codap-plugin-api";
 import { makeAutoObservable } from "mobx";
 import {
   kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName
@@ -30,8 +30,8 @@ class PluginState {
     this.neoDatasetName = neoDataset?.label ?? "";
   }
 
-  async updatePins() {
-    const pinResult = await getAllItems(kPinDataContextName);
+  *updatePins(): Generator<Promise<IResult>, void, IResult> {
+    const pinResult = yield(getAllItems(kPinDataContextName));
     if (pinResult.success) {
       const pinData = pinResult.values as any;
       this.pins = pinData.map((pin: any) => {

@@ -1,10 +1,11 @@
 import { expect } from "@playwright/test";
-import { test } from "./fixtures";
+import { test } from "./fixtures.js";
 
 test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
   const diUrl = `${baseURL}?maxImages=2`;
-  await page.goto(`https://codap3.concord.org/?mouseSensor&di=${diUrl}`);
+  await page.addInitScript({content: "localStorage.setItem('debug', 'plugins')"});
+  await page.goto(`https://codap3.concord.org/branch/main/?mouseSensor&di=${diUrl}`);
 
   const iframe = page.frameLocator(".codap-web-view-iframe");
 
@@ -16,6 +17,11 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   // - https://github.com/microsoft/playwright/issues/20893
   const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature [day]");
   await radio.click();
+
+  // Add a pin to the map
+  await page.getByTestId("add-pin-button").click();
+  await page.locator(".map-pin-layer").first().click({ position: { x: 150, y: 150 } });
+  await expect(iframe.getByTestId("number-of-locations"), "Pin should be added").toContainText("Locations: 1");
 
   await iframe.getByRole("button", { name: "Get Data" }).click();
 

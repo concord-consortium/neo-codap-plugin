@@ -23,11 +23,18 @@ export async function initializeNeoPlugin() {
     ]
   });
 
-  // Create map
-  await sendMessage("create", `component`, {
-    name: kMapName,
-    type: "map"
-  });
+  // Create map if it doesn't exist
+  const existingMap = await sendMessage("get", `component[${kMapName}]`);
+  if (!existingMap.success) {
+    await sendMessage("create", "component", {
+      type: "map",
+      name: kMapName,
+      title: "Map"
+    });
+  }
+
+  // See if there are any existing pins
+  pluginState.updatePins();
 
   // Set up a listener for changes to the pin dataset
   addDataContextChangeListener(kPinDataContextName, notification => {

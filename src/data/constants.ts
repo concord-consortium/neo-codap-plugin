@@ -10,4 +10,4 @@ export const kPinLatAttributeName = "pinLat";
 export const kPinLongAttributeName = "pinLong";
 export const kPinColorAttributeName = "pinColor";
 
-export const kMapName = "Map";
+export const kMapName = "NeoMap";
