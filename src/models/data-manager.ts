@@ -129,7 +129,9 @@ export class DataManager {
       const sortedDates = dates.sort();
       const items = sortedDates.map(date => itemMap.get(date) as DatasetItem);
       const existingDataContext = await getDataContext(kDataContextName);
-
+      const existingComponents = await sendMessage("get", "componentList");
+      const existingGraph = existingComponents.values
+                              .find((comp: any) => comp.type === "graph");
       let createDC;
       if (!existingDataContext.success) {
         createDC = await createDataContext(kDataContextName);
@@ -141,6 +143,9 @@ export class DataManager {
         await clearExistingCases();
         await createItems(kDataContextName, items);
         await createTable(kDataContextName);
+        if (existingGraph) {
+          await sendMessage("delete", `component[${existingGraph.id}]`);
+        }
         await createGraph(kDataContextName, neoDataset.label, "date", "value");
       }
     } catch (error) {
