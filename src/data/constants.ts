@@ -11,3 +11,5 @@ export const kPinLongAttributeName = "pinLong";
 export const kPinColorAttributeName = "pinColor";
 
 export const kMapName = "NeoMap";
+
+export const kSliderComponentName = "NeoSlider";
