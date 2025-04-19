@@ -83,13 +83,19 @@ export async function createOrUpdateDateSlider(value: number, lowerBound:number,
       globalValueName: "Date",
       lowerBound,
       upperBound,
-      // TODO: Not sure if this is needed
-      value
+      scaleType: "date",
+      dateMultipleOfUnit: "month",
+      multipleOf: 1,
     });
   } else {
     await sendMessage("update", `component[${kSliderComponentName}]`, {
       lowerBound,
       upperBound,
+      // We could reset all slider configuration properties on each update,
+      // but that might be frustrating for a user that wants to customize it.
+      // scaleType: "date",
+      // dateMultipleOfUnit: "month",
+      // multipleOf: 1,
     });
   }
 
