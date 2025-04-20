@@ -41,8 +41,18 @@ interface DatasetItem {
   url: string;
 }
 
+
+const dayInSeconds = 24 * 60 * 60;
+/**
+ * Get a timestamp representing the month and year of the item
+ * 24 hours is added to it so that even in timezones that are
+ * behind UTC the date will be the same.
+ *
+ * @param item
+ * @returns
+ */
 function getTimestamp(item: DatasetItem): number {
-  return new Date(item.date).getTime() / 1000;
+  return new Date(item.date, ).getTime() / 1000 + dayInSeconds;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;

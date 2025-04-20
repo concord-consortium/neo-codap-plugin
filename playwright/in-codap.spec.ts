@@ -32,7 +32,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
 
   // Make sure there is a slider with the correct value
   await expect(page.getByTestId("slider-variable-name-text")).toContainText("Date");
-  await expect(page.getByTestId("slider-variable-value-text-input")).toHaveValue("12/2000");
+  await expect(page.getByTestId("slider-variable-value-text-input")).toHaveValue("1/2001");
 
   // eslint-disable-next-line playwright/no-conditional-in-test
   if (!iframeFrame) {
