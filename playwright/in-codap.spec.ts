@@ -4,11 +4,14 @@ import { test } from "./fixtures.js";
 test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
   const diUrl = baseURL;
+  // eslint-disable-next-line playwright/no-conditional-in-test
+  if (!diUrl) {
+    throw new Error("baseURL is not defined");
+  }
   await page.addInitScript({content: "localStorage.setItem('debug', 'plugins')"});
   await page.goto(`https://codap3.concord.org/branch/main/?mouseSensor&di=${diUrl}`);
 
   const iframe = page.frameLocator(".codap-web-view-iframe");
-  const iframeFrame = page.frame({ url: diUrl});
 
   // Select the land surface dataset because it has the fewest images
   // We select by text instead of getByRole("radio", { name: "Land Surface Temperature [day]" })
@@ -46,6 +49,14 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   const mapTile = page.getByTestId("codap-map");
   const mapTitle = mapTile.getByTestId("component-title-bar");
   await expect(mapTitle).toContainText("2001-03-01");
+
+  const iframeUrl = await iframe.owner().getAttribute("src");
+  // eslint-disable-next-line playwright/no-conditional-in-test
+  if (!iframeUrl) {
+    throw new Error("iframeUrl is null");
+  }
+
+  const iframeFrame = page.frame({ url: iframeUrl});
 
   // eslint-disable-next-line playwright/no-conditional-in-test
   if (!iframeFrame) {
