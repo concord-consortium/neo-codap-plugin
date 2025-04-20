@@ -66,12 +66,15 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   // Reload the page to make sure it doesn't recreate the table, map, or slider
   await iframeFrame.goto(iframeFrame.url());
 
-  // Get data again after reloading to make sure the app works
-  await radio.click();
+  // Get some different data after reloading to make sure the app works
   await iframe.getByRole("button", { name: "Get Data" }).click();
+
+  // Need to wait until everything is loaded
+  // The map title is the last thing to be updated
+  // The rainfall dataset might take a while to load
+  await expect(mapTitle).toContainText("Rainfall");
 
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
   await expect(page.getByTestId("codap-map")).toHaveCount(1);
-
 });
