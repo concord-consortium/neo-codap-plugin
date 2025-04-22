@@ -187,10 +187,12 @@ export class DataManager {
         await createItems(kDataContextName, items);
         await createTable(kDataContextName);
         const existingComponents = await sendMessage("get", "componentList");
-        const existingGraph = existingComponents.values
-                              .find((comp: any) => comp.type === "graph");
-        if (existingGraph) {
-          await sendMessage("delete", `component[${existingGraph.id}]`);
+        const existingGraphs = existingComponents.values
+                              .filter((comp: any) => comp.type === "graph");
+        if (existingGraphs.length > 0) {
+          existingGraphs.forEach(async (existingGraph: any) => {
+            await sendMessage("delete", `component[${existingGraph.id}]`);
+          });
         }
         await createGraph(kDataContextName, neoDataset.label,
                           {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
