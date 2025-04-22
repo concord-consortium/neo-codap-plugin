@@ -54,7 +54,6 @@ interface IGraphValues {
 }
 
 export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  console.log("Creating graph", dataContext, name, graphValues);
   const graph = await sendMessage("create", "component", {
     type: "graph",
     dataContext,
