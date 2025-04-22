@@ -194,6 +194,8 @@ export class DataManager {
         }
         await createGraph(kDataContextName, neoDataset.label,
                           {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
+        await createGraph(kDataContextName, neoDataset.label,
+                          {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
