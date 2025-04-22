@@ -40,26 +40,27 @@ export async function initializeNeoPlugin() {
 
 }
 
-export async function createOrUpdateMap(title: string): Promise<void> {
+export async function createOrUpdateMap(title: string, url?: string): Promise<void> {
+  const mapProps: Record<string, any> = {
+    title
+  };
+  if (url) {
+    mapProps.geoRaster = {
+      type: "png",
+      url
+    };
+  }
+
   const existingMap = await sendMessage("get", `component[${kMapName}]`);
   if (!existingMap.success) {
     await sendMessage("create", "component", {
       type: "map",
       name: kMapName,
-      title
+      ...mapProps
     });
   } else {
-    await sendMessage("update", `component[${kMapName}]`, {
-      title
-      // When there is geo raster support in CODAP we also need to do something like this:
-      // geoRasterUrl: item.url,
-      //
-    });
+    await sendMessage("update", `component[${kMapName}]`, mapProps);
   }
-
-  // Note in the current geotiff branch it is necessary to call update after create
-  // because the create call ignores the geotiffUrl. Hopefully we can fix this in the updated
-  // CODAP implementation.
 }
 
 export async function createOrUpdateDateSlider(value: number, lowerBound:number, upperBound:number): Promise<void> {

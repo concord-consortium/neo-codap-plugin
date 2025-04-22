@@ -248,7 +248,7 @@ export class DataManager {
       return;
     }
     const item = this.items[index];
-    await createOrUpdateMap(`${neoDataset.label} - ${item.date}`);
+    await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
   }
 
   private handleGlobalUpdate(notification: ClientNotification) {
