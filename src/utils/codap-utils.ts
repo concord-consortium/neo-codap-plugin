@@ -48,9 +48,9 @@ export async function initializeNeoPlugin() {
 }
 
 interface IGraphValues {
-  xAttrName: string;
-  yAttrName: string;
-  legendAttrName: string;
+  xAttrName?: string;
+  yAttrName?: string;
+  legendAttrName?: string;
 }
 
 export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
@@ -59,9 +59,7 @@ export const createGraph = async (dataContext: string, name: string, graphValues
     dataContext,
     name,
     xAttributeName: graphValues.xAttrName,
-    xAttributeType: "date",
     yAttributeName: graphValues.yAttrName,
-    yAttributeType: "numeric",
     legendAttributeName: graphValues.legendAttrName
   });
   return graph;
