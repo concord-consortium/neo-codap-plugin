@@ -87,6 +87,7 @@ export async function createOrUpdateDateSlider(value: number, lowerBound:number,
       scaleType: "date",
       dateMultipleOfUnit: "month",
       multipleOf: 1,
+      animationRate: 4, // 4 frames per second this is about as fast a the full world map can handle
     });
   } else {
     await sendMessage("update", `component[${kSliderComponentName}]`, {
