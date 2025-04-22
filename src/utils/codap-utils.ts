@@ -46,3 +46,24 @@ export async function initializeNeoPlugin() {
   });
 
 }
+
+interface IGraphValues {
+  xAttrName: string;
+  yAttrName: string;
+  legendAttrName: string;
+}
+
+export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
+  console.log("Creating graph", dataContext, name, graphValues);
+  const graph = await sendMessage("create", "component", {
+    type: "graph",
+    dataContext,
+    name,
+    xAttributeName: graphValues.xAttrName,
+    xAttributeType: "date",
+    yAttributeName: graphValues.yAttrName,
+    yAttributeType: "numeric",
+    legendAttributeName: graphValues.legendAttrName
+  });
+  return graph;
+};

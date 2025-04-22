@@ -4,15 +4,15 @@ import {
   createNewCollection,
   createTable,
   getDataContext,
-  sendMessage
+  sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@lunapaint/png-codec";
-import { createGraph } from "../utils/codap-helper";
+import { kPinColorAttributeName } from "../data/constants";
+import { createGraph } from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
-import { estimateValueFromHex } from "../utils/color-to-value-helper";
 
 export const kDataContextName = "NEOPluginData";
 const kCollectionName = "Available Dates";
@@ -85,7 +85,6 @@ export class DataManager {
           paletteIndex,
           value: neoDataset.paletteToValue(paletteIndex),
           label,
-          value,
           loadTime,
           pinColor: pin.color
         });
@@ -176,9 +175,6 @@ export class DataManager {
       });
 
       const existingDataContext = await getDataContext(kDataContextName);
-      const existingComponents = await sendMessage("get", "componentList");
-      const existingGraph = existingComponents.values
-                              .find((comp: any) => comp.type === "graph");
       let createDC;
       if (!existingDataContext.success) {
         createDC = await createDataContext(kDataContextName);
@@ -190,10 +186,14 @@ export class DataManager {
         await clearExistingCases();
         await createItems(kDataContextName, items);
         await createTable(kDataContextName);
+        const existingComponents = await sendMessage("get", "componentList");
+        const existingGraph = existingComponents.values
+                              .find((comp: any) => comp.type === "graph");
         if (existingGraph) {
           await sendMessage("delete", `component[${existingGraph.id}]`);
         }
-        await createGraph(kDataContextName, neoDataset.label, "date", "value");
+        await createGraph(kDataContextName, neoDataset.label,
+                          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
