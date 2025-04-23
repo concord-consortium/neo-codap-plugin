@@ -54,6 +54,14 @@ interface IGraphValues {
 }
 
 export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
+  const existingComponents = await sendMessage("get", "componentList");
+  const existingGraphs = existingComponents.values
+                                .filter((comp: any) => comp.type === "graph");
+  if (existingGraphs.length > 0) {
+    existingGraphs.forEach(async (eGraph: any) => {
+      await sendMessage("delete", `component[${eGraph.id}]`);
+    });
+  }
   const graph = await sendMessage("create", "component", {
     type: "graph",
     dataContext,

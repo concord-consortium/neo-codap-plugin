@@ -1,7 +1,8 @@
 import {
+  createChildCollection,
   createDataContext,
   createItems,
-  createNewCollection,
+  createParentCollection,
   createTable,
   getDataContext,
   sendMessage,
@@ -15,7 +16,8 @@ import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
-const kCollectionName = "Available Dates";
+const kMapPinsCollectionName = "Map Pins";
+const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
   await sendMessage("delete", `dataContext[${kDataContextName}].allCases`);
@@ -182,16 +184,11 @@ export class DataManager {
 
       if (existingDataContext?.success || createDC?.success) {
         await updateDataContextTitle(neoDataset.label);
-        await this.createDatesCollection();
+        await this.createMapPinsCollection();
+        await this.createDatesChildCollection();
         await clearExistingCases();
         await createItems(kDataContextName, items);
         await createTable(kDataContextName);
-        const existingComponents = await sendMessage("get", "componentList");
-        const existingGraph = existingComponents.values
-                              .find((comp: any) => comp.type === "graph");
-        if (existingGraph) {
-          await sendMessage("delete", `component[${existingGraph.id}]`);
-        }
         await createGraph(kDataContextName, neoDataset.label,
                           {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
       }
@@ -201,14 +198,19 @@ export class DataManager {
     }
   }
 
-  private async createDatesCollection(): Promise<void> {
-    await createNewCollection(kDataContextName, kCollectionName, [
+  private async createDatesChildCollection(): Promise<void> {
+    await createChildCollection(kDataContextName, kDatesCollectionName, kMapPinsCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
-      { name: "label" },
       { name: "paletteIndex", type: "numeric" },
       { name: "value", type: "numeric" },
       { name: "loadTime", type: "numeric" },
+    ]);
+  }
+
+  private async createMapPinsCollection(): Promise<void> {
+    await createParentCollection(kDataContextName, kMapPinsCollectionName, [
+      { name: "label" },
       { name: "pinColor", type: "color" }
     ]);
   }
