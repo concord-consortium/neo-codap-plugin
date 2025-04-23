@@ -1,4 +1,6 @@
 import {
+  ClientNotification,
+  codapInterface,
   createChildCollection,
   createDataContext,
   createItems,
@@ -14,6 +16,7 @@ import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
+import { createOrUpdateDateSlider, createOrUpdateMap } from "../utils/codap-utils";
 
 export const kDataContextName = "NEOPluginData";
 const kMapPinsCollectionName = "Map Pins";
@@ -39,6 +42,21 @@ interface DatasetItem {
   // The time to load the image in milliseconds
   loadTime: number;
   pinColor: string;
+  url: string;
+}
+
+
+const dayInSeconds = 24 * 60 * 60;
+/**
+ * Get a timestamp representing the month and year of the item
+ * 24 hours is added to it so that even in timezones that are
+ * behind UTC the date will be the same.
+ *
+ * @param item
+ * @returns
+ */
+function getTimestamp(item: DatasetItem): number {
+  return new Date(item.date, ).getTime() / 1000 + dayInSeconds;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -46,6 +64,12 @@ export type ProgressCallback = (current: number, total: number) => void;
 export class DataManager {
   private progressCallback?: ProgressCallback;
   private reversePalette: Record<number, number> | undefined;
+  private items: DatasetItem[] | undefined;
+
+  constructor() {
+    this.handleGlobalUpdate = this.handleGlobalUpdate.bind(this);
+    codapInterface.on("notify", "global[Date]", this.handleGlobalUpdate);
+  }
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -88,7 +112,8 @@ export class DataManager {
           value: neoDataset.paletteToValue(paletteIndex),
           label,
           loadTime,
-          pinColor: pin.color
+          pinColor: pin.color,
+          url: geoImage.imageUrl
         });
       });
     } catch (error) {
@@ -168,11 +193,11 @@ export class DataManager {
 
       const dates = neoDataset.images.map(img => img.date);
       const sortedDates = dates.sort();
-      const items: DatasetItem[] = [];
+      this.items = [];
       itemMap.forEach(pinItems => {
         const sortedItems = sortedDates.map(date => pinItems.get(date));
         sortedItems.forEach(sortedItem => {
-          if (sortedItem) items.push(sortedItem);
+          if (sortedItem) this.items!.push(sortedItem);
         });
       });
 
@@ -187,8 +212,10 @@ export class DataManager {
         await this.createMapPinsCollection();
         await this.createDatesChildCollection();
         await clearExistingCases();
-        await createItems(kDataContextName, items);
+        await createItems(kDataContextName, this.items);
         await createTable(kDataContextName);
+        await this.createOrUpdateSlider();
+        await this.updateMapWithItemIndex(0);
         await createGraph(kDataContextName, neoDataset.label,
                           {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
       }
