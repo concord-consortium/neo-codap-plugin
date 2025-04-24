@@ -1,6 +1,6 @@
 import { addDataContextChangeListener, initializePlugin, sendMessage } from "@concord-consortium/codap-plugin-api";
 import {
-  kInitialDimensions, kMapName, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName,
+  kInitialDimensions, kMapName, kOneMonthInSeconds, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName,
   kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
 } from "../data/constants";
 import { pluginState } from "../models/plugin-state";
@@ -110,14 +110,6 @@ interface IGraphValues {
 }
 
 export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const existingComponents = await sendMessage("get", "componentList");
-  const existingGraphs = existingComponents.values
-                                .filter((comp: any) => comp.type === "graph");
-  if (existingGraphs.length > 0) {
-    existingGraphs.forEach(async (eGraph: any) => {
-      await sendMessage("delete", `component[${eGraph.id}]`);
-    });
-  }
   const graph = await sendMessage("create", "component", {
     type: "graph",
     dataContext,
@@ -129,10 +121,37 @@ export const createGraph = async (dataContext: string, name: string, graphValues
   return graph;
 };
 
-export const updateGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
+export const addConnectingLinesToGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
   const graph = await sendMessage("update", `component[${name}]`, {
     type: "graph",
     showConnectingLines: graphValues.showConnectingLines,
+  });
+  return graph;
+};
+
+export const deleteExistingGraphs = async () => {
+  const existingComponents = await sendMessage("get", "componentList");
+  const existingGraphs = existingComponents.values
+                                .filter((comp: any) => comp.type === "graph");
+  if (existingGraphs.length > 0) {
+    existingGraphs.forEach(async (eGraph: any) => {
+      await sendMessage("delete", `component[${eGraph.id}]`);
+    });
+  }
+};
+
+export const addRegionOfInterestToGraphs = async (dataContext: string, name: string, position: number | string) => {
+  const roi = await sendMessage("create", `component[${name} Plot].adornment`, {
+    type: "Region of Interest",
+    primary: {position, "extent": kOneMonthInSeconds}
+  });
+  return roi;
+};
+
+export const updateGraphRegionOfInterest = async (dataContext: string, name: string, position: number | string) => {
+  const graph = await sendMessage("update", `component[${name} Plot].adornment`, {
+    type: "Region of Interest",
+    primary: {position, "extent": kOneMonthInSeconds}
   });
   return graph;
 };

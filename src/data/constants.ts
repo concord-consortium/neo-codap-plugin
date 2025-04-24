@@ -13,3 +13,5 @@ export const kPinColorAttributeName = "pinColor";
 export const kMapName = "NeoMap";
 
 export const kSliderComponentName = "NeoSlider";
+
+export const kOneMonthInSeconds = 259200;
