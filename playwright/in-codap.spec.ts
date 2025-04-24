@@ -77,4 +77,12 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
   await expect(page.getByTestId("codap-map")).toHaveCount(1);
+
+  // Need to wait for fix in CODAP to get the correct graph
+  //make sure the graph opens and have the correct axes attributes
+  // await expect(page.getByTestId("codap-graph")).toHaveCount(1);
+  // await expect(page.locator(".Graph-title-bar")).toContainText("Rainfall Chart");
+  // await expect(page.getByTestId("axis-legend-attribute-button-bottom")).toContainText("label");
+  // await expect(page.getByTestId("axis-legend-attribute-button-left")).toContainText("date");
+  // await expect(page.getByTestId("axis-legend-attribute-button-legend")).toContainText("color");
 });
