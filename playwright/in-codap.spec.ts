@@ -3,7 +3,11 @@ import { test } from "./fixtures.js";
 
 test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
-  const diUrl = `${baseURL}?maxImages=2`;
+  const diUrl = baseURL;
+  // eslint-disable-next-line playwright/no-conditional-in-test
+  if (!diUrl) {
+    throw new Error("baseURL is not defined");
+  }
   await page.addInitScript({content: "localStorage.setItem('debug', 'plugins')"});
   await page.goto(`https://codap3.concord.org/branch/main/?mouseSensor&di=${diUrl}`);
 
@@ -28,4 +32,49 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   // Make sure the table has something from our data in it
   await expect(page.getByTestId("collection-table-grid"), "Table should contain date")
     .toContainText("1/1/2001", { timeout: 30000 });
+
+  // Make sure there is a slider with the correct value
+  await expect(page.getByTestId("slider-variable-name-text")).toContainText("Date");
+  await expect(page.getByTestId("slider-variable-value-text-input")).toHaveValue("1/2001");
+
+  // Move the slider and make sure the map date changes
+  const sliderThumb = page.getByTestId("slider-thumb-icon");
+  await sliderThumb.hover({position: {x: 3, y: 3}});
+  // eslint-disable-next-line playwright/no-conditional-in-test
+  const box = await sliderThumb.boundingBox() || {x: 0, y: 0};
+  await page.mouse.down();
+  await page.mouse.move(box.x + 60, box.y);
+  await page.mouse.up();
+
+  const mapTile = page.getByTestId("codap-map");
+  const mapTitle = mapTile.getByTestId("component-title-bar");
+  await expect(mapTitle).toContainText("2001-03-01");
+
+  const iframeUrl = await iframe.owner().getAttribute("src");
+  // eslint-disable-next-line playwright/no-conditional-in-test
+  if (!iframeUrl) {
+    throw new Error("iframeUrl is null");
+  }
+
+  const iframeFrame = page.frame({ url: iframeUrl});
+
+  // eslint-disable-next-line playwright/no-conditional-in-test
+  if (!iframeFrame) {
+    throw new Error("iframeFrame is null");
+  }
+
+  // Reload the page to make sure it doesn't recreate the table, map, or slider
+  await iframeFrame.goto(iframeFrame.url());
+
+  // Get some different data after reloading to make sure the app works
+  await iframe.getByRole("button", { name: "Get Data" }).click();
+
+  // Need to wait until everything is loaded
+  // The map title is the last thing to be updated
+  // The rainfall dataset might take a while to load
+  await expect(mapTitle).toContainText("Rainfall");
+
+  await expect(page.getByTestId("case-table")).toHaveCount(1);
+  await expect(page.getByTestId("codap-slider")).toHaveCount(1);
+  await expect(page.getByTestId("codap-map")).toHaveCount(1);
 });

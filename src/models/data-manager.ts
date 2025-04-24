@@ -1,21 +1,25 @@
 import {
+  ClientNotification,
+  codapInterface,
+  createChildCollection,
   createDataContext,
   createItems,
-  createNewCollection,
+  createParentCollection,
   createTable,
   getDataContext,
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@lunapaint/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
-import { createGraph } from "../utils/codap-utils";
+import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, updateGraph } from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
-const kCollectionName = "Available Dates";
+const kMapPinsCollectionName = "Map Pins";
+const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
   await sendMessage("delete", `dataContext[${kDataContextName}].allCases`);
@@ -37,6 +41,21 @@ interface DatasetItem {
   // The time to load the image in milliseconds
   loadTime: number;
   pinColor: string;
+  url: string;
+}
+
+
+const dayInSeconds = 24 * 60 * 60;
+/**
+ * Get a timestamp representing the month and year of the item
+ * 24 hours is added to it so that even in timezones that are
+ * behind UTC the date will be the same.
+ *
+ * @param item
+ * @returns
+ */
+function getTimestamp(item: DatasetItem): number {
+  return new Date(item.date, ).getTime() / 1000 + dayInSeconds;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -44,6 +63,12 @@ export type ProgressCallback = (current: number, total: number) => void;
 export class DataManager {
   private progressCallback?: ProgressCallback;
   private reversePalette: Record<number, number> | undefined;
+  private items: DatasetItem[] | undefined;
+
+  constructor() {
+    this.handleGlobalUpdate = this.handleGlobalUpdate.bind(this);
+    codapInterface.on("notify", "global[Date]", this.handleGlobalUpdate);
+  }
 
   get maxImages(): number {
     const urlParams = new URLSearchParams(window.location.search);
@@ -86,7 +111,8 @@ export class DataManager {
           value: neoDataset.paletteToValue(paletteIndex),
           label,
           loadTime,
-          pinColor: pin.color
+          pinColor: pin.color,
+          url: geoImage.imageUrl
         });
       });
     } catch (error) {
@@ -166,11 +192,11 @@ export class DataManager {
 
       const dates = neoDataset.images.map(img => img.date);
       const sortedDates = dates.sort();
-      const items: DatasetItem[] = [];
+      this.items = [];
       itemMap.forEach(pinItems => {
         const sortedItems = sortedDates.map(date => pinItems.get(date));
         sortedItems.forEach(sortedItem => {
-          if (sortedItem) items.push(sortedItem);
+          if (sortedItem) this.items!.push(sortedItem);
         });
       });
 
@@ -182,22 +208,20 @@ export class DataManager {
 
       if (existingDataContext?.success || createDC?.success) {
         await updateDataContextTitle(neoDataset.label);
-        await this.createDatesCollection();
+        await this.createMapPinsCollection();
+        await this.createDatesChildCollection();
         await clearExistingCases();
-        await createItems(kDataContextName, items);
+        await createItems(kDataContextName, this.items);
         await createTable(kDataContextName);
-        const existingComponents = await sendMessage("get", "componentList");
-        const existingGraphs = existingComponents.values
-                              .filter((comp: any) => comp.type === "graph");
-        if (existingGraphs.length > 0) {
-          existingGraphs.forEach(async (existingGraph: any) => {
-            await sendMessage("delete", `component[${existingGraph.id}]`);
-          });
-        }
-        await createGraph(kDataContextName, neoDataset.label,
-                          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
-        await createGraph(kDataContextName, neoDataset.label,
+        // We can't add the connecting lines on the first graph creation so we update it later
+        await createGraph(kDataContextName, `${neoDataset.label} Plot`,
+          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
+                  await createGraph(kDataContextName, neoDataset.label,
                           {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
+
+        await this.createOrUpdateSlider();
+        await this.updateMapWithItemIndex(0);
+        await updateGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
@@ -205,14 +229,74 @@ export class DataManager {
     }
   }
 
-  private async createDatesCollection(): Promise<void> {
-    await createNewCollection(kDataContextName, kCollectionName, [
+  private async createOrUpdateSlider(): Promise<void> {
+    if (!this.items) {
+      return;
+    }
+
+    if (this.items.length === 0) {
+      console.warn("No items to create or update the slider");
+      return;
+    }
+
+    const value = getTimestamp(this.items[0]);
+    const lowerBound = value;
+    const upperBound = getTimestamp(this.items[this.items.length - 1]);
+    createOrUpdateDateSlider(value, lowerBound, upperBound);
+  }
+
+  public async updateMapWithItemIndex(index: number): Promise<void> {
+    const { neoDataset } = pluginState;
+    if (!neoDataset) {
+      console.error("No dataset specified");
+      return;
+    }
+
+    if (!this.items || index < 0 || index >= this.items.length) {
+      // FIXME: this happens when no pins are on the map and the get data button is pushed
+      console.error("No items or invalid index");
+      return;
+    }
+    const item = this.items[index];
+    await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
+  }
+
+  private handleGlobalUpdate(notification: ClientNotification) {
+    if (!this.items) {
+      return;
+    }
+    // convert to number
+    const timestamp = Number(notification.values.globalValue);
+
+    // Find the item index that matches the timestamp
+    // FIXME: This isn't efficient because we can now have multiple items for each date
+    const itemIndex = this.items.findIndex((item, index) => {
+      if (!this.items) return false;
+      const itemTimestamp = getTimestamp(item);
+      const nextItemIndex = index + 1;
+      const nextItemTimestamp = nextItemIndex >= this.items.length
+        ? Number.MAX_SAFE_INTEGER
+        : getTimestamp(this.items[nextItemIndex]);
+      return timestamp >= itemTimestamp && timestamp < nextItemTimestamp;
+    });
+    if (itemIndex !== -1) {
+      this.updateMapWithItemIndex(itemIndex);
+    }
+  }
+
+  private async createDatesChildCollection(): Promise<void> {
+    await createChildCollection(kDataContextName, kDatesCollectionName, kMapPinsCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
-      { name: "label" },
       { name: "paletteIndex", type: "numeric" },
       { name: "value", type: "numeric" },
       { name: "loadTime", type: "numeric" },
+    ]);
+  }
+
+  private async createMapPinsCollection(): Promise<void> {
+    await createParentCollection(kDataContextName, kMapPinsCollectionName, [
+      { name: "label" },
       { name: "pinColor", type: "color" }
     ]);
   }
