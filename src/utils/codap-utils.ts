@@ -106,6 +106,7 @@ interface IGraphValues {
   xAttrName?: string;
   yAttrName?: string;
   legendAttrName?: string;
+  showConnectingLines?: boolean;
 }
 
 export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
@@ -123,7 +124,15 @@ export const createGraph = async (dataContext: string, name: string, graphValues
     name,
     xAttributeName: graphValues.xAttrName,
     yAttributeName: graphValues.yAttrName,
-    legendAttributeName: graphValues.legendAttrName
+    legendAttributeName: graphValues.legendAttrName,
+  });
+  return graph;
+};
+
+export const updateGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
+  const graph = await sendMessage("update", `component[${name}]`, {
+    type: "graph",
+    showConnectingLines: graphValues.showConnectingLines,
   });
   return graph;
 };

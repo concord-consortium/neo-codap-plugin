@@ -11,12 +11,11 @@ import {
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@lunapaint/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
-import { createGraph } from "../utils/codap-utils";
+import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, updateGraph } from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
-import { createOrUpdateDateSlider, createOrUpdateMap } from "../utils/codap-utils";
 
 export const kDataContextName = "NEOPluginData";
 const kMapPinsCollectionName = "Map Pins";
@@ -214,14 +213,71 @@ export class DataManager {
         await clearExistingCases();
         await createItems(kDataContextName, this.items);
         await createTable(kDataContextName);
+        // We can't add the connecting lines on the first graph creation so we update it later
+        await createGraph(kDataContextName, `${neoDataset.label} Plot`,
+          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
         await this.createOrUpdateSlider();
         await this.updateMapWithItemIndex(0);
-        await createGraph(kDataContextName, neoDataset.label,
-                          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
+        await updateGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
+    }
+  }
+
+  private async createOrUpdateSlider(): Promise<void> {
+    if (!this.items) {
+      return;
+    }
+
+    if (this.items.length === 0) {
+      console.warn("No items to create or update the slider");
+      return;
+    }
+
+    const value = getTimestamp(this.items[0]);
+    const lowerBound = value;
+    const upperBound = getTimestamp(this.items[this.items.length - 1]);
+    createOrUpdateDateSlider(value, lowerBound, upperBound);
+  }
+
+  public async updateMapWithItemIndex(index: number): Promise<void> {
+    const { neoDataset } = pluginState;
+    if (!neoDataset) {
+      console.error("No dataset specified");
+      return;
+    }
+
+    if (!this.items || index < 0 || index >= this.items.length) {
+      // FIXME: this happens when no pins are on the map and the get data button is pushed
+      console.error("No items or invalid index");
+      return;
+    }
+    const item = this.items[index];
+    await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
+  }
+
+  private handleGlobalUpdate(notification: ClientNotification) {
+    if (!this.items) {
+      return;
+    }
+    // convert to number
+    const timestamp = Number(notification.values.globalValue);
+
+    // Find the item index that matches the timestamp
+    // FIXME: This isn't efficient because we can now have multiple items for each date
+    const itemIndex = this.items.findIndex((item, index) => {
+      if (!this.items) return false;
+      const itemTimestamp = getTimestamp(item);
+      const nextItemIndex = index + 1;
+      const nextItemTimestamp = nextItemIndex >= this.items.length
+        ? Number.MAX_SAFE_INTEGER
+        : getTimestamp(this.items[nextItemIndex]);
+      return timestamp >= itemTimestamp && timestamp < nextItemTimestamp;
+    });
+    if (itemIndex !== -1) {
+      this.updateMapWithItemIndex(itemIndex);
     }
   }
 
