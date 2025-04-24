@@ -141,17 +141,25 @@ export const deleteExistingGraphs = async () => {
 };
 
 export const addRegionOfInterestToGraphs = async (dataContext: string, name: string, position: number | string) => {
-  const roi = await sendMessage("create", `component[${name} Plot].adornment`, {
+  const roiXYGraph = await sendMessage("create", `component[${name} Plot].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  return roi;
+  const roiCategoryChartGraph = await sendMessage("create", `component[${name} Chart].adornment`, {
+    type: "Region of Interest",
+    primary: {position, "extent": kOneMonthInSeconds}
+  });
+  return {roiXYGraph, roiCategoryChartGraph};
 };
 
 export const updateGraphRegionOfInterest = async (dataContext: string, name: string, position: number | string) => {
-  const graph = await sendMessage("update", `component[${name} Plot].adornment`, {
+  const roiXYGraph = await sendMessage("update", `component[${name} Plot].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  return graph;
+  const roiCategoryChartGraph = await sendMessage("update", `component[${name} Chart].adornment`, {
+    type: "Region of Interest",
+    primary: {position, "extent": kOneMonthInSeconds}
+  });
+  return {roiXYGraph, roiCategoryChartGraph};
 };

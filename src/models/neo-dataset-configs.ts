@@ -72,7 +72,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   },
   {
     id: "MOD_LSTD_CLIM_M",
-    label: "Land Surface Temperature [day]",
+    label: "Land Surface Temperature (day)",
     legendImage: "https://neo.gsfc.nasa.gov/palettes/modis_lst.png",
     paletteToValue: (index: number) => {
       // Convert palette index to degC
