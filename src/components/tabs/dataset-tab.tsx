@@ -61,6 +61,8 @@ export const DatasetTab = observer(function DatasetTab() {
     if (selectedNeoDataset) pluginState.setNeoDataset(selectedNeoDataset);
   };
 
+  const numberOfLocations = pluginState.pins.length;
+
   return (
     <div className="App">
       <h1>NASA Earth Data</h1>
@@ -72,10 +74,10 @@ export const DatasetTab = observer(function DatasetTab() {
       <div className="footer">
         {showProgress
           ? <ProgressContainer current={progress.current} total={progress.total}/>
-          : <div data-testid="number-of-locations">Locations: {pluginState.pins.length}</div>
+          : <div data-testid="number-of-locations">Locations: {numberOfLocations}</div>
         }
         <div className="footer-buttons-container">
-          <button className="get-data-button" disabled={showProgress} onClick={handleGetData}
+          <button className="get-data-button" disabled={showProgress || numberOfLocations <= 0} onClick={handleGetData}
             title="Fetch data from NASA and send to CODAP">
               Get Data
           </button>
