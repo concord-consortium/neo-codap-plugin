@@ -72,7 +72,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   // Need to wait until everything is loaded
   // The map title is the last thing to be updated
   // The rainfall dataset might take a while to load
-  await expect(mapTitle).toContainText("Rainfall", { timeout: 8000 });
+  await expect(mapTitle).toContainText("Rainfall", { timeout: 7000 });
 
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
