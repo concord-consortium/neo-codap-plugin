@@ -30,7 +30,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await iframe.getByRole("button", { name: "Get Data" }).click();
 
   // Make sure the table has something from our data in it
-  await expect(page.getByTestId("collection-table-grid"), "Table should contain date")
+  await expect(page.getByTestId("collection-table-grid").nth(1), "Table should contain date")
     .toContainText("1/1/2001", { timeout: 30000 });
 
   // Make sure there is a slider with the correct value
@@ -77,4 +77,5 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
   await expect(page.getByTestId("codap-map")).toHaveCount(1);
+  await expect(page.getByTestId("codap-graph")).toHaveCount(1);
 });
