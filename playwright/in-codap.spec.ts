@@ -22,6 +22,10 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature [day]");
   await radio.click();
 
+  // verify Get Data button is disabled
+  const getDataButton = iframe.getByRole("button", { name: "Get Data" });
+  await expect(getDataButton).toBeDisabled();
+
   // Add a pin to the map
   await page.getByTestId("add-pin-button").click();
   await page.locator(".map-pin-layer").first().click({ position: { x: 150, y: 150 } });
