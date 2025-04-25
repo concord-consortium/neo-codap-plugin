@@ -288,6 +288,7 @@ export class DataManager {
       { name: "paletteIndex", type: "numeric" },
       { name: "value", type: "numeric" },
       { name: "loadTime", type: "numeric" },
+      { name: "url", type: "categorical" }
     ]);
   }
 
