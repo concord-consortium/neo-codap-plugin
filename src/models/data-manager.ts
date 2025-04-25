@@ -17,7 +17,7 @@ import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnecting
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
-import { pinLabel, pluginState } from "./plugin-state";
+import { pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
 const kMapPinsCollectionName = "Map Pins";
@@ -104,7 +104,7 @@ export class DataManager {
 
       pluginState.pins.forEach(pin => {
         const color = geoImage.extractColor(pin.lat, pin.long);
-        const label = pinLabel(pin);
+        const label = pin.label;
         const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(color)] ?? -1;
         items.set(label, {
           date: image.date,

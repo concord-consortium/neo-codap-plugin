@@ -4,12 +4,14 @@ import {
   kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName
 } from "../data/constants";
 import { NeoDataset } from "./neo-types";
+import { geoLocSearch } from "../utils/location-utils";
 
 interface IMapPin {
   color: string;
   id: string;
   lat: number;
   long: number;
+  label: string;
 }
 
 export function pinLabel(pin: IMapPin) {
@@ -34,13 +36,23 @@ class PluginState {
     const pinResult = yield(getAllItems(kPinDataContextName));
     if (pinResult.success) {
       const pinData = pinResult.values as any;
-      this.pins = pinData.map((pin: any) => {
+      const labels: string[] = [];
+      for (const pin of pinData) {
+        const lat = pin.values[kPinLatAttributeName];
+        const long = pin.values[kPinLongAttributeName];
+        const locationResult = yield geoLocSearch(lat, long);
+        const label = locationResult.values.location;
+        labels.push(label);
+      }
+
+      this.pins = pinData.map((pin: any, index: number) => {
         const values = pin.values;
         return {
           color: values[kPinColorAttributeName],
           id: pin.id,
           lat: values[kPinLatAttributeName],
-          long: values[kPinLongAttributeName]
+          long: values[kPinLongAttributeName],
+          label: labels[index]
         };
       });
     }
