@@ -102,3 +102,37 @@ export async function createOrUpdateDateSlider(value: number, lowerBound:number,
   }
 
 }
+interface IGraphValues {
+  xAttrName?: string;
+  yAttrName?: string;
+  legendAttrName?: string;
+  showConnectingLines?: boolean;
+}
+
+export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
+  const existingComponents = await sendMessage("get", "componentList");
+  const existingGraphs = existingComponents.values
+                                .filter((comp: any) => comp.type === "graph");
+  if (existingGraphs.length > 0) {
+    existingGraphs.forEach(async (eGraph: any) => {
+      await sendMessage("delete", `component[${eGraph.id}]`);
+    });
+  }
+  const graph = await sendMessage("create", "component", {
+    type: "graph",
+    dataContext,
+    name,
+    xAttributeName: graphValues.xAttrName,
+    yAttributeName: graphValues.yAttrName,
+    legendAttributeName: graphValues.legendAttrName,
+  });
+  return graph;
+};
+
+export const updateGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
+  const graph = await sendMessage("update", `component[${name}]`, {
+    type: "graph",
+    showConnectingLines: graphValues.showConnectingLines,
+  });
+  return graph;
+};

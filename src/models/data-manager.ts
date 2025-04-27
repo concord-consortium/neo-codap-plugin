@@ -1,22 +1,25 @@
 import {
   ClientNotification,
   codapInterface,
+  createChildCollection,
   createDataContext,
   createItems,
-  createNewCollection,
+  createParentCollection,
   createTable,
   getDataContext,
-  sendMessage
+  sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@lunapaint/png-codec";
+import { kPinColorAttributeName } from "../data/constants";
+import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, updateGraph } from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
-import { createOrUpdateDateSlider, createOrUpdateMap } from "../utils/codap-utils";
 
 export const kDataContextName = "NEOPluginData";
-const kCollectionName = "Available Dates";
+const kMapPinsCollectionName = "Map Pins";
+const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
   await sendMessage("delete", `dataContext[${kDataContextName}].allCases`);
@@ -198,7 +201,6 @@ export class DataManager {
       });
 
       const existingDataContext = await getDataContext(kDataContextName);
-
       let createDC;
       if (!existingDataContext.success) {
         createDC = await createDataContext(kDataContextName);
@@ -206,12 +208,17 @@ export class DataManager {
 
       if (existingDataContext?.success || createDC?.success) {
         await updateDataContextTitle(neoDataset.label);
-        await this.createDatesCollection();
+        await this.createMapPinsCollection();
+        await this.createDatesChildCollection();
         await clearExistingCases();
         await createItems(kDataContextName, this.items);
         await createTable(kDataContextName);
+        // We can't add the connecting lines on the first graph creation so we update it later
+        await createGraph(kDataContextName, `${neoDataset.label} Plot`,
+          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
         await this.createOrUpdateSlider();
         await this.updateMapWithItemIndex(0);
+        await updateGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
@@ -274,16 +281,21 @@ export class DataManager {
     }
   }
 
-  private async createDatesCollection(): Promise<void> {
-    await createNewCollection(kDataContextName, kCollectionName, [
+  private async createDatesChildCollection(): Promise<void> {
+    await createChildCollection(kDataContextName, kDatesCollectionName, kMapPinsCollectionName, [
       { name: "date", type: "date" },
       { name: "color", type: "color" },
-      { name: "label" },
       { name: "paletteIndex", type: "numeric" },
       { name: "value", type: "numeric" },
       { name: "loadTime", type: "numeric" },
-      { name: "pinColor", type: "color" },
       { name: "url", type: "categorical" }
+    ]);
+  }
+
+  private async createMapPinsCollection(): Promise<void> {
+    await createParentCollection(kDataContextName, kMapPinsCollectionName, [
+      { name: "label" },
+      { name: "pinColor", type: "color" }
     ]);
   }
 }
