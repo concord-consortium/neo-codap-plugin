@@ -216,6 +216,8 @@ export class DataManager {
         // We can't add the connecting lines on the first graph creation so we update it later
         await createGraph(kDataContextName, `${neoDataset.label} Plot`,
           {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
+        await createGraph(kDataContextName, `${neoDataset.label} Chart`,
+          {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
         await this.createOrUpdateSlider();
         await this.updateMapWithItemIndex(0);
         await updateGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
