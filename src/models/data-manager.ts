@@ -9,7 +9,7 @@ import {
   getDataContext,
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
-import { decodePng } from "@lunapaint/png-codec";
+import { decodePng } from "@concord-consortium/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
 import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
   deleteExistingGraphs, addRegionOfInterestToGraphs,

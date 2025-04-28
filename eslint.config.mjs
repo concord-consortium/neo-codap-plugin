@@ -24,6 +24,7 @@ export default typescriptEslint.config(
     ignores: [
       "dist/",
       "node_modules/",
+      ".yalc/",
       ".vscode/",
       "playwright-report/",
       "test-results/"
