@@ -28,7 +28,7 @@ export const kImageLoadDelay = 500;
  * This blocking applied to the whole website not just downloading images.
  * So to be safe, the number of images is limited to 100.
  */
-export const kMaxImages = 100;
+export const kMaxSerialImages = 100;
 
 /**
  * Whether to use the S3 bucket to download images at runtime.

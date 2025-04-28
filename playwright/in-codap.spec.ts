@@ -3,7 +3,7 @@ import { test } from "./fixtures.js";
 
 test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
-  const diUrl = baseURL;
+  const diUrl = `${baseURL}?maxImages=10`;
   // eslint-disable-next-line playwright/no-conditional-in-test
   if (!diUrl) {
     throw new Error("baseURL is not defined");
@@ -48,7 +48,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
 
   const mapTile = page.getByTestId("codap-map");
   const mapTitle = mapTile.getByTestId("component-title-bar");
-  await expect(mapTitle).toContainText("2001-03-01");
+  await expect(mapTitle).toContainText("2001-02-01");
 
   const iframeUrl = await iframe.owner().getAttribute("src");
   // eslint-disable-next-line playwright/no-conditional-in-test

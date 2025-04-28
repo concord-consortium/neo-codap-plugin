@@ -16,7 +16,7 @@ import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnecting
   updateGraphRegionOfInterest} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
-import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
+import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
@@ -57,7 +57,7 @@ const dayInSeconds = 24 * 60 * 60;
  * @returns
  */
 function getTimestamp(item: DatasetItem): number {
-  return new Date(item.date, ).getTime() / 1000 + dayInSeconds;
+  return new Date(item.date).getTime() / 1000 + dayInSeconds;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -78,7 +78,10 @@ export class DataManager {
     if (maxImages) {
       return parseInt(maxImages, 10);
     }
-    return kMaxImages;
+    if (kParallelLoad) {
+      return Infinity; // No limit when loading in parallel
+    }
+    return kMaxSerialImages;
   }
 
   public setProgressCallback(callback: ProgressCallback) {
@@ -86,7 +89,7 @@ export class DataManager {
   }
 
   /**
-   * Processes a single image and extracts its color at the demo location
+   * Processes a single image and extracts its color at the pin locations
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
@@ -162,6 +165,10 @@ export class DataManager {
 
       this.progressCallback?.(0, totalImages);
 
+      // NOTE: The images in neoDataset are not really sorted by date, so taking
+      // a slice of the first N images may not result in a consecutive set of dates.
+      const limitedImages = neoDataset.images.slice(0, totalImages);
+
       await this.loadPalette();
 
       const _processImage = async (img: NeoImageInfo) => {
@@ -179,20 +186,17 @@ export class DataManager {
       if (kParallelLoad) {
         // Process all images in parallel
         await Promise.all(
-          neoDataset.images.map(_processImage)
+          limitedImages.map(_processImage)
         );
       } else {
         // Process all images serially
-        for (const img of neoDataset.images) {
-          if (processedImages >= this.maxImages) {
-            break;
-          }
+        for (const img of limitedImages) {
           await _processImage(img);
           await new Promise(resolve => setTimeout(resolve, kImageLoadDelay));
         }
       }
 
-      const dates = neoDataset.images.map(img => img.date);
+      const dates = limitedImages.map(img => img.date);
       const sortedDates = dates.sort();
       this.items = [];
       itemMap.forEach(pinItems => {
