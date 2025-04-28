@@ -3,7 +3,7 @@ import { test } from "./fixtures.js";
 
 test("App inside of CODAP", async ({ baseURL, page }) => {
   await page.setViewportSize({width: 1400, height: 800});
-  const diUrl = baseURL;
+  const diUrl = `${baseURL}?maxImages=10`;
   // eslint-disable-next-line playwright/no-conditional-in-test
   if (!diUrl) {
     throw new Error("baseURL is not defined");
@@ -14,12 +14,12 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   const iframe = page.frameLocator(".codap-web-view-iframe");
 
   // Select the land surface dataset because it has the fewest images
-  // We select by text instead of getByRole("radio", { name: "Land Surface Temperature [day]" })
+  // We select by text instead of getByRole("radio", { name: "Land Surface Temperature (day)" })
   // because Playwright has issues with radio inputs:
   // - https://github.com/microsoft/playwright/issues/13470
   // - https://github.com/microsoft/playwright/issues/17559
   // - https://github.com/microsoft/playwright/issues/20893
-  const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature [day]");
+  const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature (day)");
   await radio.click();
 
   // Add a pin to the map
@@ -48,7 +48,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
 
   const mapTile = page.getByTestId("codap-map");
   const mapTitle = mapTile.getByTestId("component-title-bar");
-  await expect(mapTitle).toContainText("2001-03-01");
+  await expect(mapTitle).toContainText("2001-02-01");
 
   const iframeUrl = await iframe.owner().getAttribute("src");
   // eslint-disable-next-line playwright/no-conditional-in-test
@@ -72,10 +72,18 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   // Need to wait until everything is loaded
   // The map title is the last thing to be updated
   // The rainfall dataset might take a while to load
-  await expect(mapTitle).toContainText("Rainfall");
+  await expect(mapTitle).toContainText("Rainfall", { timeout: 7000 });
 
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
   await expect(page.getByTestId("codap-map")).toHaveCount(1);
   await expect(page.getByTestId("codap-graph")).toHaveCount(1);
+
+  // Need to wait for fix in CODAP to get the correct graph
+  //make sure the graph opens and have the correct axes attributes
+  // await expect(page.getByTestId("codap-graph")).toHaveCount(1);
+  // await expect(page.locator(".Graph-title-bar")).toContainText("Rainfall Chart");
+  // await expect(page.getByTestId("axis-legend-attribute-button-bottom")).toContainText("label");
+  // await expect(page.getByTestId("axis-legend-attribute-button-left")).toContainText("date");
+  // await expect(page.getByTestId("axis-legend-attribute-button-legend")).toContainText("color");
 });

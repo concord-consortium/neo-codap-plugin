@@ -8,6 +8,7 @@
 
 # data
 /neo-images
+/scripts/color-mapping.csv
 
 # docs
 /docs/local-docs
@@ -23,3 +24,7 @@
 # Logs
 npm-debug.log*
 npm-error.log*
+
+# Yalc
+/.yalc
+.yalc.lock

@@ -9,15 +9,15 @@ import {
   getDataContext,
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
-import { decodePng } from "@lunapaint/png-codec";
+import { decodePng } from "@concord-consortium/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
 import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
   deleteExistingGraphs, addRegionOfInterestToGraphs,
   updateGraphRegionOfInterest} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
-import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
-import { pluginState } from "./plugin-state";
+import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
+import { pinLabel, pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
 const kMapPinsCollectionName = "Map Pins";
@@ -33,7 +33,40 @@ async function updateDataContextTitle(title: string): Promise<void> {
   });
 }
 
-interface DatasetItem {
+/**
+ * This is a combination of the general pin properties of pinColor and label.
+ * Along with the color, paletteIndex, and value which are specific to the image.
+ */
+interface NeoLoadedImagePin {
+  // General pin properties
+  label: string;
+  pinColor: string;
+
+  // Specific image properties
+
+  // In the form #RRGGBB
+  color: string;
+  paletteIndex: number;
+  value: number | null;
+}
+
+/**
+ * A hierarchical representation of the loaded image with its pins. This structure is
+ * flattened before being sent to CODAP. Also within CODAP the pins are the top level collection not the
+ * dates. This facilitates displaying graphs with connecting lines which are separate for each
+ * pin collection.
+ */
+interface NeoLoadedImage {
+  date: string;
+  loadTime: number;
+  url: string;
+  pins: Record<string, NeoLoadedImagePin>;
+}
+
+/**
+ * A flattened representation of the loaded image with its pins. This structure is sent to CODAP.
+ */
+interface CodapPinItem {
   date: string;
   // In the form #RRGGBB
   color: string;
@@ -44,6 +77,7 @@ interface DatasetItem {
   loadTime: number;
   pinColor: string;
   url: string;
+  pins?: Record<string, NeoLoadedImagePin>;
 }
 
 
@@ -56,8 +90,8 @@ const dayInSeconds = 24 * 60 * 60;
  * @param item
  * @returns
  */
-function getTimestamp(item: DatasetItem): number {
-  return new Date(item.date, ).getTime() / 1000 + dayInSeconds;
+function getTimestamp(item: NeoLoadedImage): number {
+  return new Date(item.date).getTime() / 1000 + dayInSeconds;
 }
 
 export type ProgressCallback = (current: number, total: number) => void;
@@ -65,7 +99,7 @@ export type ProgressCallback = (current: number, total: number) => void;
 export class DataManager {
   private progressCallback?: ProgressCallback;
   private reversePalette: Record<number, number> | undefined;
-  private items: DatasetItem[] | undefined;
+  private loadedImages : NeoLoadedImage[] | undefined;
 
   constructor() {
     this.handleGlobalUpdate = this.handleGlobalUpdate.bind(this);
@@ -78,7 +112,10 @@ export class DataManager {
     if (maxImages) {
       return parseInt(maxImages, 10);
     }
-    return kMaxImages;
+    if (kParallelLoad) {
+      return Infinity; // No limit when loading in parallel
+    }
+    return kMaxSerialImages;
   }
 
   public setProgressCallback(callback: ProgressCallback) {
@@ -86,13 +123,12 @@ export class DataManager {
   }
 
   /**
-   * Processes a single image and extracts its color at the demo location
+   * Processes a single image and extracts its color at the pin locations
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
-  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<Map<string, DatasetItem>> {
+  private async processImage(image: NeoImageInfo, neoDataset: NeoDataset): Promise<NeoLoadedImage | undefined> {
     const geoImage = new GeoImage(image, neoDataset);
-    const items = new Map<string, DatasetItem>();
     try {
       const startTime = Date.now();
       await geoImage.loadFromNeoDataset();
@@ -102,27 +138,31 @@ export class DataManager {
       // close to the total time of all the images.
       const loadTime = Date.now() - startTime;
 
+      const neoDatasetImage: NeoLoadedImage = {
+        date: image.date,
+        loadTime,
+        url: geoImage.imageUrl,
+        pins: {}
+      };
+
       pluginState.pins.forEach(pin => {
         const color = geoImage.extractColor(pin.lat, pin.long);
         const label = pin.label;
         const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(color)] ?? -1;
-        items.set(label, {
-          date: image.date,
+        neoDatasetImage.pins[label] = {
           color: GeoImage.rgbToHex(color),
           paletteIndex,
           value: neoDataset.paletteToValue(paletteIndex),
           label,
-          loadTime,
           pinColor: pin.color,
-          url: geoImage.imageUrl
-        });
+        };
       });
+      return neoDatasetImage;
     } catch (error) {
       console.error(`Failed to process image ${image.id}:`, error);
     } finally {
       geoImage.dispose();
     }
-    return items;
   }
 
   async loadPalette() {
@@ -157,50 +197,54 @@ export class DataManager {
       const totalImages = Math.min(neoDataset.images.length, this.maxImages);
       let processedImages = 0;
 
-      // itemMap[pinLabel][date] = DatasetItem
-      const itemMap = new Map<string, Map<string, DatasetItem>>();
+      // itemItemMap[date] = NeoDatasetImage2
+      const loadedImageMap = new Map<string, NeoLoadedImage>();
 
       this.progressCallback?.(0, totalImages);
+
+      // NOTE: The images in neoDataset are not really sorted by date, so taking
+      // a slice of the first N images may not result in a consecutive set of dates.
+      const limitedImageInfo = neoDataset.images.slice(0, totalImages);
 
       await this.loadPalette();
 
       const _processImage = async (img: NeoImageInfo) => {
-        const imageItems = await this.processImage(img, neoDataset);
+        const imageItem = await this.processImage(img, neoDataset);
         processedImages++;
         this.progressCallback?.(processedImages, totalImages);
-        imageItems.forEach((item, label) => {
-          if (!itemMap.has(label)) {
-            itemMap.set(label, new Map());
-          }
-          itemMap.get(label)?.set(img.date, item);
-        });
+        if (!imageItem) {
+          return;
+        }
+        loadedImageMap.set(img.date, imageItem);
       };
 
       if (kParallelLoad) {
         // Process all images in parallel
         await Promise.all(
-          neoDataset.images.map(_processImage)
+          limitedImageInfo.map(_processImage)
         );
       } else {
         // Process all images serially
-        for (const img of neoDataset.images) {
-          if (processedImages >= this.maxImages) {
-            break;
-          }
+        for (const img of limitedImageInfo) {
           await _processImage(img);
           await new Promise(resolve => setTimeout(resolve, kImageLoadDelay));
         }
       }
 
-      const dates = neoDataset.images.map(img => img.date);
+      const dates = limitedImageInfo.map(img => img.date);
       const sortedDates = dates.sort();
-      this.items = [];
-      itemMap.forEach(pinItems => {
-        const sortedItems = sortedDates.map(date => pinItems.get(date));
-        sortedItems.forEach(sortedItem => {
-          if (sortedItem) this.items!.push(sortedItem);
-        });
-      });
+      this.loadedImages = sortedDates.map(date => loadedImageMap.get(date)).filter((item) => !!item);
+
+      // We always setup the slider and update the map even if there are no pins
+      await this.createOrUpdateSlider();
+      await this.updateMapAndGraphsWithItemIndex(0, true);
+
+      if (pluginState.pins.length === 0) {
+        // No pins available, so all we do is create the slider
+        // NOTE: If the pins are all removed we don't currently update the graphs or table.
+        // Perhaps we should?
+        return;
+      }
 
       const existingDataContext = await getDataContext(kDataContextName);
       let createDC;
@@ -208,25 +252,48 @@ export class DataManager {
         createDC = await createDataContext(kDataContextName);
       }
 
-      if (existingDataContext?.success || createDC?.success) {
-        await updateDataContextTitle(neoDataset.label);
-        await this.createMapPinsCollection();
-        await this.createDatesChildCollection();
-        await clearExistingCases();
-        await deleteExistingGraphs();
-        await createItems(kDataContextName, this.items);
-        await createTable(kDataContextName);
-        // We can't add the connecting lines on the first graph creation so we update it later
-        await createGraph(kDataContextName, `${neoDataset.label} Plot`,
-          {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
-        await createGraph(kDataContextName, `${neoDataset.label} Chart`,
-          {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
-        await this.createOrUpdateSlider();
-        await this.updateMapWithItemIndex(0);
-        await addConnectingLinesToGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
-        const roiPosition = getTimestamp(this.items[0]);
-        await addRegionOfInterestToGraphs(kDataContextName, neoDataset.label, roiPosition);
+      if (!existingDataContext?.success && !createDC?.success) {
+        console.error("Failed to create or get data context:", existingDataContext);
+        return;
       }
+
+      // Create the flat item array from the images
+      const items: CodapPinItem[] = [];
+      this.loadedImages.forEach(image => {
+        if (!image?.pins) {
+          return;
+        }
+        Object.values(image.pins).forEach(pin => {
+          items.push({
+            date: image.date,
+            color: pin.color,
+            paletteIndex: pin.paletteIndex,
+            value: pin.value,
+            label: pin.label,
+            loadTime: image.loadTime,
+            pinColor: pin.pinColor,
+            url: image.url
+          });
+        });
+      });
+
+      await updateDataContextTitle(neoDataset.label);
+      await this.createMapPinsCollection();
+      await this.createDatesChildCollection();
+      await clearExistingCases();
+      await deleteExistingGraphs();
+      await createItems(kDataContextName, items);
+      await createTable(kDataContextName);
+      // We can't add the connecting lines on the first graph creation so we update it later
+      await createGraph(kDataContextName, `${neoDataset.label} Plot`,
+        {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
+      await createGraph(kDataContextName, `${neoDataset.label} Chart`,
+        {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
+      await this.createOrUpdateSlider();
+      await this.updateMapAndGraphsWithItemIndex(0);
+      await addConnectingLinesToGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
+      const roiPosition = getTimestamp(this.loadedImages[0]);
+      await addRegionOfInterestToGraphs(kDataContextName, neoDataset.label, roiPosition);
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
@@ -234,68 +301,64 @@ export class DataManager {
   }
 
   private async createOrUpdateSlider(): Promise<void> {
-    if (!this.items) {
+    if (!this.loadedImages) {
       return;
     }
 
-    if (this.items.length === 0) {
+    if (this.loadedImages.length === 0) {
       console.warn("No items to create or update the slider");
       return;
     }
 
-    const value = getTimestamp(this.items[0]);
+    const value = getTimestamp(this.loadedImages[0]);
     const lowerBound = value;
-    const upperBound = getTimestamp(this.items[this.items.length - 1]);
-    createOrUpdateDateSlider(value, lowerBound, upperBound);
+    const upperBound = getTimestamp(this.loadedImages[this.loadedImages.length - 1]);
+    await createOrUpdateDateSlider(value, lowerBound, upperBound);
   }
 
-  public async updateMapWithItemIndex(index: number): Promise<void> {
-    const { neoDataset } = pluginState;
+  public async updateMapAndGraphsWithItemIndex(index: number, skipGraphs?: boolean): Promise<void> {
+    const { neoDataset, pins } = pluginState;
     if (!neoDataset) {
       console.error("No dataset specified");
       return;
     }
 
-    if (!this.items || index < 0 || index >= this.items.length) {
-      // FIXME: this happens when no pins are on the map and the get data button is pushed
+    if (!this.loadedImages || index < 0 || index >= this.loadedImages.length) {
       console.error("No items or invalid index");
       return;
     }
-    const item = this.items[index];
+    const item = this.loadedImages[index];
     await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
-  }
 
-  public async updateGraphRegionOfInterestWithTime(time: number): Promise<void> {
-    const { neoDataset } = pluginState;
-    if (!neoDataset) {
-      console.error("No dataset specified");
+    if (skipGraphs || pins.length === 0) {
+      // No pins available, so we don't need to update the graphs
       return;
     }
-    await updateGraphRegionOfInterest(kDataContextName, neoDataset.label, time);
+
+    const startTime = getTimestamp(item);
+    await updateGraphRegionOfInterest(kDataContextName, neoDataset.label, startTime);
   }
 
   private handleGlobalUpdate(notification: ClientNotification) {
-    if (!this.items) {
+    if (!this.loadedImages) {
       return;
     }
     // convert to number
     const timestamp = Number(notification.values.globalValue);
 
     // Find the item index that matches the timestamp
-    // FIXME: This isn't efficient because we can now have multiple items for each date
-    const itemIndex = this.items.findIndex((item, index) => {
-      if (!this.items) return false;
+    const itemIndex = this.loadedImages.findIndex((item, index) => {
+      if (!this.loadedImages) return false;
       const itemTimestamp = getTimestamp(item);
       const nextItemIndex = index + 1;
-      const nextItemTimestamp = nextItemIndex >= this.items.length
+      const nextItemTimestamp = nextItemIndex >= this.loadedImages.length
         ? Number.MAX_SAFE_INTEGER
-        : getTimestamp(this.items[nextItemIndex]);
+        : getTimestamp(this.loadedImages[nextItemIndex]);
       return timestamp >= itemTimestamp && timestamp < nextItemTimestamp;
     });
     if (itemIndex !== -1) {
-      this.updateMapWithItemIndex(itemIndex);
+      this.updateMapAndGraphsWithItemIndex(itemIndex);
     }
-    this.updateGraphRegionOfInterestWithTime(timestamp);
   }
 
   private async createDatesChildCollection(): Promise<void> {
@@ -305,6 +368,7 @@ export class DataManager {
       { name: "paletteIndex", type: "numeric" },
       { name: "value", type: "numeric" },
       { name: "loadTime", type: "numeric" },
+      { name: "url", type: "categorical" }
     ]);
   }
 
