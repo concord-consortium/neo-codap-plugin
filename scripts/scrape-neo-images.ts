@@ -3,7 +3,7 @@ import * as cheerio from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
 import { kNeoDatasetConfigs } from "../src/models/neo-dataset-configs.js";
-import { NeoImageInfo, ScapedNeoDatasetInfo, ScapedNeoDatasetMap } from "../src/models/neo-types.js";
+import { NeoImageInfo, ScrapedNeoDatasetInfo, ScrapedNeoDatasetMap } from "../src/models/neo-types.js";
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetch(url);
@@ -30,7 +30,7 @@ function processYearHtml(yearHtml: string, imageInfos: NeoImageInfo[]) {
   }
 }
 
-async function processDataset(datasetId: string): Promise<ScapedNeoDatasetInfo> {
+async function processDataset(datasetId: string): Promise<ScrapedNeoDatasetInfo> {
   const baseUrl = `https://neo.gsfc.nasa.gov/view.php?datasetId=${datasetId}`;
   const imageInfos: NeoImageInfo[] = [];
 
@@ -73,7 +73,7 @@ async function processDataset(datasetId: string): Promise<ScapedNeoDatasetInfo> 
 }
 
 async function main() {
-  const results: ScapedNeoDatasetMap = {};
+  const results: ScrapedNeoDatasetMap = {};
 
   // Process each dataset
   for (const dataset of kNeoDatasetConfigs) {
