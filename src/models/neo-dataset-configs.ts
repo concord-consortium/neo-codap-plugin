@@ -39,7 +39,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
       if (index < 0 || index >= 255) {
         return null;
       }
-      return index/255 * 300;
+      return index/254 * 300;
     }
   },
   {
@@ -53,7 +53,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
       if (index < 0 || index >= 255) {
         return null;
       }
-      return index/255 * 1500;
+      return index/254 * 1500.2;
     }
   },
   {
@@ -67,7 +67,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
       if (index < 0 || index >= 255) {
         return null;
       }
-      return index/255 - 0.1;
+      return index/254 - 0.1;
     }
   },
   {
@@ -81,7 +81,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
       if (index < 0 || index >= 255) {
         return null;
       }
-      return index/255 * 70 - 25;
+      return index/254 * 70 - 25;
     }
   },
   {
@@ -90,14 +90,23 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
     legendImage: "https://neo.gsfc.nasa.gov/palettes/modis_fire_l3.png",
     paletteToValue: (index: number) => {
       // Convert palette index to fire pixels / 1000 km^2 / day
-      // The values are outside of the range, or they are 255 which seems
-      // to indicate no data
-      if (index < 0 || index >= 255) {
+
+      // Outside of the range just return null
+      if (index < 0 || index > 255) {
         return null;
       }
-      // FIXME: this is logarithmic so we need to analyze the data to find the actual
-      // scale.
-      return index/255 * 30.1 - 0.1;
+
+      if (index === 0 || index === 255) {
+        // Palette index 0 actually fits the curve and has a value of 0.1.
+        // However its color is black (0, 0, 0), which is the same color used for palette index 255.
+        // Since we don't have access to the actual palette index at runtime, we have to lookup
+        // the palette index from the color. So if we find black we don't know if it is palette index
+        // 0 or 255. Currently there are more pixels with index 255 than 0. So for now we'll
+        // just treat palette index 0 and 255 the same and return null.
+        return null;
+      }
+
+      return 0.09998920216570711 * Math.E ** (0.022456632453790572 * index);
     }
   }
 ];

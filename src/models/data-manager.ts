@@ -84,7 +84,7 @@ export class DataManager {
   }
 
   /**
-   * Processes a single image and extracts its color at the demo location
+   * Processes a single image and extracts its color at the pin locations
    * @param image - Dataset image metadata
    * @returns Promise resolving to a DatasetItem with date and color
    */
