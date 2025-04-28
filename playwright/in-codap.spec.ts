@@ -14,12 +14,12 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   const iframe = page.frameLocator(".codap-web-view-iframe");
 
   // Select the land surface dataset because it has the fewest images
-  // We select by text instead of getByRole("radio", { name: "Land Surface Temperature [day]" })
+  // We select by text instead of getByRole("radio", { name: "Land Surface Temperature (day)" })
   // because Playwright has issues with radio inputs:
   // - https://github.com/microsoft/playwright/issues/13470
   // - https://github.com/microsoft/playwright/issues/17559
   // - https://github.com/microsoft/playwright/issues/20893
-  const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature [day]");
+  const radio = iframe.getByRole("radiogroup").getByText("Land Surface Temperature (day)");
   await radio.click();
 
   // Add a pin to the map

@@ -22,7 +22,7 @@ test.describe("Dataset Selector", () => {
       "Carbon Monoxide",
       "Nitrogen Dioxide",
       "Vegetation Index",
-      "Land Surface Temperature [day]",
+      "Land Surface Temperature (day)",
       "Active Fires"
     ];
 
@@ -40,7 +40,7 @@ test.describe("Dataset Selector", () => {
       "Carbon Monoxide",
       "Nitrogen Dioxide",
       "Vegetation Index",
-      "Land Surface Temperature [day]",
+      "Land Surface Temperature (day)",
       "Active Fires"
     ];
 
