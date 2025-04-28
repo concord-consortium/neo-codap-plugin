@@ -14,4 +14,4 @@ export const kMapName = "NeoMap";
 
 export const kSliderComponentName = "NeoSlider";
 
-export const kOneMonthInSeconds = 259200;
+export const kOneMonthInSeconds = 60*60*24*30;
