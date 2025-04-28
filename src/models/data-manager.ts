@@ -11,7 +11,9 @@ import {
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@lunapaint/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
-import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, updateGraph } from "../utils/codap-utils";
+import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
+  deleteExistingGraphs, addRegionOfInterestToGraphs,
+  updateGraphRegionOfInterest} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxImages, kParallelLoad } from "./config";
@@ -211,6 +213,7 @@ export class DataManager {
         await this.createMapPinsCollection();
         await this.createDatesChildCollection();
         await clearExistingCases();
+        await deleteExistingGraphs();
         await createItems(kDataContextName, this.items);
         await createTable(kDataContextName);
         // We can't add the connecting lines on the first graph creation so we update it later
@@ -220,7 +223,9 @@ export class DataManager {
           {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
         await this.createOrUpdateSlider();
         await this.updateMapWithItemIndex(0);
-        await updateGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
+        await addConnectingLinesToGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
+        const roiPosition = getTimestamp(this.items[0]);
+        await addRegionOfInterestToGraphs(kDataContextName, neoDataset.label, roiPosition);
       }
     } catch (error) {
       console.error("Failed to process dataset:", error);
@@ -260,6 +265,15 @@ export class DataManager {
     await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
   }
 
+  public async updateGraphRegionOfInterestWithTime(time: number): Promise<void> {
+    const { neoDataset } = pluginState;
+    if (!neoDataset) {
+      console.error("No dataset specified");
+      return;
+    }
+    await updateGraphRegionOfInterest(kDataContextName, neoDataset.label, time);
+  }
+
   private handleGlobalUpdate(notification: ClientNotification) {
     if (!this.items) {
       return;
@@ -281,6 +295,7 @@ export class DataManager {
     if (itemIndex !== -1) {
       this.updateMapWithItemIndex(itemIndex);
     }
+    this.updateGraphRegionOfInterestWithTime(timestamp);
   }
 
   private async createDatesChildCollection(): Promise<void> {
