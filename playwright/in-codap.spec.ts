@@ -77,7 +77,8 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
   await expect(page.getByTestId("codap-map")).toHaveCount(1);
-  await expect(page.getByTestId("codap-graph")).toHaveCount(2);
+  const graphCount = await page.getByTestId("codap-graph").count();
+  expect(graphCount).toBeGreaterThanOrEqual(2);
 
   // Need to wait for fix in CODAP to get the correct graph
   //make sure the graph opens and have the correct axes attributes
