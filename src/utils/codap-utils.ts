@@ -4,6 +4,7 @@ import {
   kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
 } from "../data/constants";
 import { pluginState } from "../models/plugin-state";
+import { kChartGraphName, kXYGraphName } from "../models/data-manager";
 
 export async function initializeNeoPlugin() {
   initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
@@ -103,28 +104,58 @@ export async function createOrUpdateDateSlider(value: number, lowerBound:number,
 
 }
 interface IGraphValues {
+  name: string;
+  title?: string;
   xAttrName?: string;
   yAttrName?: string;
   legendAttrName?: string;
   showConnectingLines?: boolean;
 }
 
-export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const graph = await sendMessage("create", "component", {
-    type: "graph",
-    dataContext,
-    name,
-    xAttributeName: graphValues.xAttrName,
-    yAttributeName: graphValues.yAttrName,
-    legendAttributeName: graphValues.legendAttrName,
-  });
-  return graph;
+export const createOrUpdateGraphs = async (dataContext: string, graphValues: IGraphValues[]) => {
+  const existingComponents = await sendMessage("get", "componentList");
+  const existingGraphs = existingComponents.values.filter((comp: any) => comp.type === "graph");
+
+  if (existingGraphs.length > 0) {
+    existingGraphs.forEach(async (eGraph: any, idx: number) => {
+    // Update the existing graph
+      const updatedGraph =
+       ((eGraph.title).includes("Plot"))
+        ? await sendMessage("update", `component[${eGraph.id}]`, {
+            type: "graph",
+            dataContext,
+            title: graphValues[idx].title,
+            rescaleAxes: true,
+          })
+        : await sendMessage("update", `component[${eGraph.id}]`, {
+            type: "graph",
+            dataContext,
+            title: graphValues[idx].title,
+            rescaleAxes: true,
+          });
+      return updatedGraph;
+    });
+  } else {
+    // Create a new graph
+    graphValues.forEach(async (graphValue: IGraphValues) => {
+      const graph = await sendMessage("create", "component", {
+        name: (graphValue.title)?.includes("Plot") ? kXYGraphName : kChartGraphName,
+        type: "graph",
+        dataContext,
+        title: graphValue.title,
+        xAttributeName: graphValue.xAttrName,
+        yAttributeName: graphValue.yAttrName,
+        legendAttributeName: graphValue.legendAttrName,
+      });
+      return graph;
+    });
+  }
 };
 
-export const addConnectingLinesToGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const graph = await sendMessage("update", `component[${name}]`, {
+export const addConnectingLinesToGraph = async () => {
+  const graph = await sendMessage("update", `component[${kXYGraphName}]`, {
     type: "graph",
-    showConnectingLines: graphValues.showConnectingLines,
+    showConnectingLines: true,
   });
   return graph;
 };
@@ -140,24 +171,24 @@ export const deleteExistingGraphs = async () => {
   }
 };
 
-export const addRegionOfInterestToGraphs = async (dataContext: string, name: string, position: number | string) => {
-  const roiXYGraph = await sendMessage("create", `component[${name} Plot].adornment`, {
+export const addRegionOfInterestToGraphs = async (position: number | string) => {
+  const roiXYGraph = await sendMessage("create", `component[${kXYGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("create", `component[${name} Chart].adornment`, {
+  const roiCategoryChartGraph = await sendMessage("create", `component[${kChartGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph, roiCategoryChartGraph};
 };
 
-export const updateGraphRegionOfInterest = async (dataContext: string, name: string, position: number | string) => {
-  const roiXYGraph = await sendMessage("update", `component[${name} Plot].adornment`, {
+export const updateGraphRegionOfInterest = async (dataContext: string,position: number | string) => {
+  const roiXYGraph = await sendMessage("update", `component[${kXYGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("update", `component[${name} Chart].adornment`, {
+  const roiCategoryChartGraph = await sendMessage("update", `component[${kChartGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });

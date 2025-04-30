@@ -11,15 +11,17 @@ import {
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@concord-consortium/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
-import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
-  deleteExistingGraphs, addRegionOfInterestToGraphs,
-  updateGraphRegionOfInterest} from "../utils/codap-utils";
+import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
+  addRegionOfInterestToGraphs, updateGraphRegionOfInterest
+} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
 export const kDataContextName = "NEOPluginData";
+export const kXYGraphName = "NEOPlugin XY Graph";
+export const kChartGraphName = "NEOPlugin Chart Graph";
 const kMapPinsCollectionName = "Map Pins";
 const kDatesCollectionName = "Available Dates";
 
@@ -281,19 +283,28 @@ export class DataManager {
       await this.createMapPinsCollection();
       await this.createDatesChildCollection();
       await clearExistingCases();
-      await deleteExistingGraphs();
       await createItems(kDataContextName, items);
       await createTable(kDataContextName);
       // We can't add the connecting lines on the first graph creation so we update it later
-      await createGraph(kDataContextName, `${neoDataset.label} Plot`,
-        {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
-      await createGraph(kDataContextName, `${neoDataset.label} Chart`,
-        {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
+      await createOrUpdateGraphs(kDataContextName,
+        [ { name: kXYGraphName,
+            title: `${neoDataset.label} Plot`,
+            xAttrName: "date",
+            yAttrName: "value",
+            legendAttrName: kPinColorAttributeName
+          },
+          { name: kChartGraphName,
+            title: `${neoDataset.label} Chart`,
+            xAttrName: "label",
+            yAttrName: "date",
+            legendAttrName: "color"
+          }
+      ]);
       await this.createOrUpdateSlider();
       await this.updateMapAndGraphsWithItemIndex(0);
-      await addConnectingLinesToGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
+      await addConnectingLinesToGraph();
       const roiPosition = getTimestamp(this.loadedImages[0]);
-      await addRegionOfInterestToGraphs(kDataContextName, neoDataset.label, roiPosition);
+      await addRegionOfInterestToGraphs(roiPosition);
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
@@ -336,7 +347,7 @@ export class DataManager {
     }
 
     const startTime = getTimestamp(item);
-    await updateGraphRegionOfInterest(kDataContextName, neoDataset.label, startTime);
+    await updateGraphRegionOfInterest(kDataContextName, startTime);
   }
 
   private handleGlobalUpdate(notification: ClientNotification) {
