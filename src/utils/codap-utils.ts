@@ -4,7 +4,7 @@ import {
   kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
 } from "../data/constants";
 import { pluginState } from "../models/plugin-state";
-import { kChartGraphName, kXYGraphName } from "../models/data-manager";
+import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName } from "../models/data-manager";
 
 export async function initializeNeoPlugin() {
   initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
@@ -193,4 +193,13 @@ export const updateGraphRegionOfInterest = async (dataContext: string,position: 
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph, roiCategoryChartGraph};
+};
+
+export const updateLocationColorMap = async (colorMap: Record<string,string>) => {
+  const updateColorMap =
+          await sendMessage(
+                  "update",
+                  `dataContext[${kDataContextName}].collection[${kMapPinsCollectionName}].attribute[${"label"}]`,
+                  { colormap: colorMap });
+  return updateColorMap;
 };

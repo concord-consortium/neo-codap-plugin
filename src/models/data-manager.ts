@@ -12,7 +12,8 @@ import {
 import { decodePng } from "@concord-consortium/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
 import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
-  addRegionOfInterestToGraphs, updateGraphRegionOfInterest
+  addRegionOfInterestToGraphs, updateGraphRegionOfInterest,
+  updateLocationColorMap
 } from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
@@ -22,7 +23,7 @@ import { pinLabel, pluginState } from "./plugin-state";
 export const kDataContextName = "NEOPluginData";
 export const kXYGraphName = "NEOPlugin XY Graph";
 export const kChartGraphName = "NEOPlugin Chart Graph";
-const kMapPinsCollectionName = "Map Pins";
+export const kMapPinsCollectionName = "Map Pins";
 const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
@@ -279,6 +280,12 @@ export class DataManager {
         });
       });
 
+      // FIXME: Change pin lat lon to geoname
+      const pinColorMap: Record<string, string> = {};
+      pluginState.pins.forEach(pin => {
+        pinColorMap[`${parseFloat(pin.lat.toFixed(2))}, ${parseFloat(pin.long.toFixed(2))}`] = pin.color;
+      });
+
       await updateDataContextTitle(neoDataset.label);
       await this.createMapPinsCollection();
       await this.createDatesChildCollection();
@@ -291,7 +298,7 @@ export class DataManager {
             title: `${neoDataset.label} Plot`,
             xAttrName: "date",
             yAttrName: "value",
-            legendAttrName: kPinColorAttributeName
+            legendAttrName: "label"
           },
           { name: kChartGraphName,
             title: `${neoDataset.label} Chart`,
@@ -305,6 +312,9 @@ export class DataManager {
       await addConnectingLinesToGraph();
       const roiPosition = getTimestamp(this.loadedImages[0]);
       await addRegionOfInterestToGraphs(roiPosition);
+      // The codap-plugin-api does not support colormap property to attributes
+      // so we update the attribute after the collection is created
+      await updateLocationColorMap(pinColorMap);
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
@@ -384,8 +394,10 @@ export class DataManager {
   }
 
   private async createMapPinsCollection(): Promise<void> {
+    // The codap-plugin-api does not support colormap property to attributes
+    // so we update the attribute after the collection is created
     await createParentCollection(kDataContextName, kMapPinsCollectionName, [
-      { name: "label" },
+      { name: "label", type: "categorical"},
       { name: "pinColor", type: "color" }
     ]);
   }
