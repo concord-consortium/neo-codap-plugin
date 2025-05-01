@@ -1,5 +1,5 @@
 import { getAllItems, IResult } from "@concord-consortium/codap-plugin-api";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, reaction } from "mobx";
 import {
   kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName
 } from "../data/constants";
@@ -16,13 +16,24 @@ export function pinLabel(pin: IMapPin) {
   return `${pin.lat.toFixed(2)}, ${pin.long.toFixed(2)}`;
 }
 
+import { DataManager } from "./data-manager"; // Adjust the path as needed
+
 class PluginState {
   neoDataset: NeoDataset | undefined;
   neoDatasetName = "";
   pins: IMapPin[] = [];
+  selectedPins: IMapPin[] = [];
 
   constructor() {
     makeAutoObservable(this);
+     // Reaction to changes in selectedPins
+    reaction(
+      () => this.selectedPins, // Observe changes to selectedPins
+      (selectedPins) => {
+        const dataManager = new DataManager();
+        dataManager.handleSelectedPinsChange(selectedPins);
+      }
+    );
   }
 
   setNeoDataset(neoDataset: NeoDataset | undefined) {

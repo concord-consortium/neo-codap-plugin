@@ -6,6 +6,7 @@ import {
   createItems,
   createParentCollection,
   createTable,
+  getCaseBySearch,
   getDataContext,
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
@@ -13,7 +14,8 @@ import { decodePng } from "@concord-consortium/png-codec";
 import { kPinColorAttributeName } from "../data/constants";
 import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
   deleteExistingGraphs, addRegionOfInterestToGraphs,
-  updateGraphRegionOfInterest} from "../utils/codap-utils";
+  updateGraphRegionOfInterest,
+  createDataContextSelection} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
@@ -377,5 +379,18 @@ export class DataManager {
       { name: "label" },
       { name: "pinColor", type: "color" }
     ]);
+  }
+
+  public async handleSelectedPinsChange(selectedPins: any[]): Promise<void> {
+    selectedPins.map(async (pin) => {
+      await getCaseBySearch(kDataContextName, kMapPinsCollectionName,
+          `label == ${pin.values.pinLat.toFixed(2)}, ${pin.values.pinLong.toFixed(2)}`)
+        .then(async (result) => {
+          if (result.success) {
+            const selectedPinIds = result.values.map((item: any) => item.id);
+            await createDataContextSelection(selectedPinIds);
+          }
+        });
+    });
   }
 }
