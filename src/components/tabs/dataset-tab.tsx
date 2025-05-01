@@ -5,8 +5,9 @@ import {
 } from "@concord-consortium/codap-plugin-api";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
+import { kDataContextName } from "../../data/constants";
 import { kNeoDatasets } from "../../models/neo-datasets";
-import { DataManager, kDataContextName } from "../../models/data-manager";
+import { DataManager } from "../../models/data-manager";
 import { pluginState } from "../../models/plugin-state";
 import { isNonEmbedded } from "../../utils/embed-check";
 import { DatasetSelector } from "../dataset-selector/dataset-selector";

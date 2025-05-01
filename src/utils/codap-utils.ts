@@ -4,7 +4,6 @@ import {
   kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
 } from "../data/constants";
 import { pluginState } from "../models/plugin-state";
-import { kDataContextName } from "../models/data-manager";
 
 export async function initializeNeoPlugin() {
   initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
@@ -43,7 +42,7 @@ export async function initializeNeoPlugin() {
     const { operation, result } = notification.values;
     if (operation === "selectCases" && result.success) {
       const selectedPins = result.cases;
-      pluginState.selectedPins = selectedPins;
+      pluginState.setSelectedPins(selectedPins);
     }
   });
 }
@@ -170,8 +169,4 @@ export const updateGraphRegionOfInterest = async (dataContext: string, name: str
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph, roiCategoryChartGraph};
-};
-
-export const createDataContextSelection = async (selectedPinIds: number[]) => {
-  await sendMessage("create", `dataContext[${kDataContextName}].selectionList`,selectedPinIds);
 };
