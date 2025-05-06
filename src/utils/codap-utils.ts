@@ -1,10 +1,12 @@
-import { addDataContextChangeListener, initializePlugin, sendMessage } from "@concord-consortium/codap-plugin-api";
+import { addDataContextChangeListener, codapInterface, initializePlugin, sendMessage
+} from "@concord-consortium/codap-plugin-api";
 import {
-  kInitialDimensions, kMapName, kOneMonthInSeconds, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName,
-  kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
+  kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName, kPinColorAttributeName,
+  kPluginName, kInitialDimensions, kVersion,
+  kDataContextName, kMapPinsCollectionName, kOneMonthInSeconds,
+  kMapName, kSliderComponentName, kChartGraphName, kXYGraphName,
 } from "../data/constants";
 import { pluginState } from "../models/plugin-state";
-import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName } from "../models/data-manager";
 
 export async function initializeNeoPlugin() {
   initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
@@ -120,19 +122,12 @@ export const createOrUpdateGraphs = async (dataContext: string, graphValues: IGr
     existingGraphs.forEach(async (eGraph: any, idx: number) => {
     // Update the existing graph
       const updatedGraph =
-       ((eGraph.title).includes("Plot"))
-        ? await sendMessage("update", `component[${eGraph.id}]`, {
-            type: "graph",
-            dataContext,
-            title: graphValues[idx].title,
-            rescaleAxes: true,
-          })
-        : await sendMessage("update", `component[${eGraph.id}]`, {
-            type: "graph",
-            dataContext,
-            title: graphValues[idx].title,
-            rescaleAxes: true,
-          });
+              await sendMessage("update", `component[${eGraph.id}]`, {
+                type: "graph",
+                dataContext,
+                title: graphValues[idx].title,
+                rescaleAxes: true,
+              });
       return updatedGraph;
     });
   } else {
@@ -158,6 +153,17 @@ export const addConnectingLinesToGraph = async () => {
     showConnectingLines: true,
   });
   return graph;
+};
+
+export const rescaleGraph = async (component: string) => {
+  const request = await codapInterface.sendRequest({
+    "action": "notify",
+    "resource": `component[${component}]`,
+    "values": {
+      "request": "autoScale",
+    }
+  });
+  return request;
 };
 
 export const deleteExistingGraphs = async () => {

@@ -10,6 +10,11 @@ export const kPinLatAttributeName = "pinLat";
 export const kPinLongAttributeName = "pinLong";
 export const kPinColorAttributeName = "pinColor";
 
+export const kDataContextName = "NEOPluginData";
+export const kXYGraphName = "NEOPlugin XY Graph";
+export const kChartGraphName = "NEOPlugin Chart Graph";
+export const kMapPinsCollectionName = "Map Pins";
+
 export const kMapName = "NeoMap";
 
 export const kSliderComponentName = "NeoSlider";

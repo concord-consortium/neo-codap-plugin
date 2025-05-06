@@ -10,20 +10,15 @@ import {
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@concord-consortium/png-codec";
-import { kPinColorAttributeName } from "../data/constants";
+import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName } from "../data/constants";
 import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
-  addRegionOfInterestToGraphs, updateGraphRegionOfInterest,
-  updateLocationColorMap
+  addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
 } from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
-export const kDataContextName = "NEOPluginData";
-export const kXYGraphName = "NEOPlugin XY Graph";
-export const kChartGraphName = "NEOPlugin Chart Graph";
-export const kMapPinsCollectionName = "Map Pins";
 const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
@@ -312,6 +307,8 @@ export class DataManager {
       await addConnectingLinesToGraph();
       const roiPosition = getTimestamp(this.loadedImages[0]);
       await addRegionOfInterestToGraphs(roiPosition);
+      await rescaleGraph(kXYGraphName);
+      await rescaleGraph(kChartGraphName);
       // The codap-plugin-api does not support colormap property to attributes
       // so we update the attribute after the collection is created
       await updateLocationColorMap(pinColorMap);
