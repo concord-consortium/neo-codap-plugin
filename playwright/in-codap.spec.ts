@@ -83,7 +83,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await expect(page.locator(".Graph-title-bar").nth(0)).toContainText("Rainfall Plot");
   await expect(page.getByTestId("axis-legend-attribute-button-bottom").nth(0)).toContainText("date");
   await expect(page.getByTestId("axis-legend-attribute-button-left").nth(0)).toContainText("value");
-  await expect(page.getByTestId("axis-legend-attribute-button-legend").nth(0)).toContainText("pinColor");
+  await expect(page.getByTestId("axis-legend-attribute-button-legend").nth(0)).toContainText("label");
   page.getByTestId("codap-graph").nth(0).click({ position: { x: 10, y: 10 } });
   await expect(page.getByTestId("graph-display-values-button")).toBeVisible();
   page.getByTestId("graph-display-values-button").nth(0).click();
