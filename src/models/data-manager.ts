@@ -287,6 +287,9 @@ export class DataManager {
       await clearExistingCases();
       await createItems(kDataContextName, items);
       await createTable(kDataContextName);
+      // The codap-plugin-api does not apply colormap property to attributes
+      // so we update the attribute after the collection is created
+      await updateLocationColorMap(pinColorMap);
       // We can't add the connecting lines on the first graph creation so we update it later
       await createOrUpdateGraphs(kDataContextName,
         [ { name: kXYGraphName,
@@ -309,9 +312,7 @@ export class DataManager {
       await addRegionOfInterestToGraphs(roiPosition);
       await rescaleGraph(kXYGraphName);
       await rescaleGraph(kChartGraphName);
-      // The codap-plugin-api does not support colormap property to attributes
-      // so we update the attribute after the collection is created
-      await updateLocationColorMap(pinColorMap);
+
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
