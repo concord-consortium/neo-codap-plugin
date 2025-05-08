@@ -1,12 +1,16 @@
 import { addDataContextChangeListener, codapInterface, getCaseByID, initializePlugin, sendMessage }
   from "@concord-consortium/codap-plugin-api";
-import {
-  kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName, kPinColorAttributeName,
-  kPluginName, kInitialDimensions, kVersion,
-  kDataContextName, kMapPinsCollectionName, kOneMonthInSeconds,
-  kMapName, kSliderComponentName, kChartGraphName, kXYGraphName,
-} from "../data/constants";
+// import {
+//   kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName, kPinColorAttributeName,
+//   kPluginName, kInitialDimensions, kVersion,
+//   kDataContextName, kMapPinsCollectionName, kOneMonthInSeconds,
+//   kMapName, kSliderComponentName, kChartGraphName, kXYGraphName,
+// } from "../data/constants";
+import { kPluginName, kInitialDimensions, kVersion, kOneMonthInSeconds, kMapName,
+  kMapPinsCollectionName, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName,
+  kDataContextName, kSliderComponentName, kChartGraphName, kXYGraphName } from "../data/constants";
 import { IMapPin, pluginState } from "../models/plugin-state";
+
 
 export async function initializeNeoPlugin() {
   initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
@@ -252,8 +256,8 @@ export const updateLocationColorMap = async (colorMap: Record<string,string>) =>
                   `dataContext[${kDataContextName}].collection[${kMapPinsCollectionName}].attribute[${"label"}]`,
                   { colormap: colorMap });
   return updateColorMap;
-}
-  
+};
+
 export const getSelectionList = async (dataContext: string) => {
   const selectionList = await sendMessage("get", `dataContext[${dataContext}].selectionList`);
   if (selectionList.success) {
