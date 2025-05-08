@@ -1,9 +1,10 @@
-import { addDataContextChangeListener, initializePlugin, sendMessage } from "@concord-consortium/codap-plugin-api";
+import { addDataContextChangeListener, getCaseByID, initializePlugin, sendMessage }
+  from "@concord-consortium/codap-plugin-api";
 import {
   kInitialDimensions, kMapName, kOneMonthInSeconds, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName,
   kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
 } from "../data/constants";
-import { pluginState } from "../models/plugin-state";
+import { IMapPin, pluginState } from "../models/plugin-state";
 
 export async function initializeNeoPlugin() {
   initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
@@ -38,11 +39,48 @@ export async function initializeNeoPlugin() {
     }
   });
   // Set up a listener for pin selection
-  addDataContextChangeListener(kPinDataContextName, notification => {
+  addDataContextChangeListener(kPinDataContextName, async notification => {
     const { operation, result } = notification.values;
     if (operation === "selectCases" && result.success) {
-      const selectedPins = result.cases;
-      pluginState.setSelectedPins(selectedPins);
+      // const selectedPins = result.cases;
+      console.log("result.cases", result.cases);
+      const selectedPins = await getSelectionList(kPinDataContextName);
+      console.log("selectedPins", selectedPins);
+      const selectedPinValues: IMapPin[] = await Promise.all(
+        selectedPins.map(async (pin: any) => {
+          const pinItem = await getCaseByID(kPinDataContextName, pin.caseID);
+          if (pinItem.success) {
+            const pinValues = pinItem.values;
+            const pinCase = (pinValues as any).case;
+            return {
+              id: pinCase.id,
+              lat: pinCase.values.pinLat,
+              long: pinCase.values.pinLong,
+              color: pinCase.values.pinColor,
+            };
+          }
+          return null;
+        })
+      );
+      // const selectedPinValues: IMapPin[] = [];
+      // selectedPins.forEach(async (pin: any) => {
+      //   console.log("pin", pin);
+      //   const pinItem = await getCaseByID(kPinDataContextName, pin.caseID);
+      //   console.log("pinItem", pinItem);
+      //   if (pinItem.success) {
+      //     const pinValues = pinItem.values;
+      //     console.log("pinValues", pinValues);
+      //     selectedPinValues.push({
+      //       id: pinValues.id,
+      //       lat: pinValues[kPinLatAttributeName],
+      //       long: pinValues[kPinLongAttributeName],
+      //       color: pinValues[kPinColorAttributeName]
+      //     }
+      //     );
+      //   }
+      // });
+      console.log("selectedPinValues", selectedPinValues);
+      pluginState.setSelectedPins(selectedPinValues);
     }
   });
 }
@@ -169,4 +207,14 @@ export const updateGraphRegionOfInterest = async (dataContext: string, name: str
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph, roiCategoryChartGraph};
+};
+
+export const getSelectionList = async (dataContext: string) => {
+  const selectionList = await sendMessage("get", `dataContext[${dataContext}].selectionList`);
+  if (selectionList.success) {
+    return selectionList.values;
+  } else {
+    console.error("Error getting selection list");
+    return [];
+  }
 };

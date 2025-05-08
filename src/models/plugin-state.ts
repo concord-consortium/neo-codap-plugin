@@ -7,7 +7,7 @@ import {
 } from "../data/constants";
 import { NeoDataset } from "./neo-types";
 
-interface IMapPin {
+export interface IMapPin {
   color: string;
   id: string;
   lat: number;
@@ -61,14 +61,30 @@ class PluginState {
     this.selectedPins = selectedPins;
   }
 
-  async handleSelectedPinsChange(selectedPins: any[]): Promise<void> {
+  async handleSelectedPinsChange(selectedPins: IMapPin[]): Promise<void> {
+    console.log("Selected pins changed:", selectedPins);
+    if (selectedPins.length === 0) {
+      console.log("No selected pins");
+      await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, []);
+      return;
+    }
     for (const pin of selectedPins) {
-      const searchQuery = `label == ${pin.values.pinLat.toFixed(2)}, ${pin.values.pinLong.toFixed(2)}`;
+      console.log("Selected pin:", pin);
+      // const searchQuery = `label == ${pin.get("lat").toFixed(2)}, ${pin.get("long").toFixed(2)}`;
+      const searchQuery = `label == ${pinLabel(pin)}`;
+      console.log("Search query:", searchQuery);
       const result = await getCaseBySearch(kDataContextName, kMapPinsCollectionName, searchQuery);
 
       if (result.success) {
         const selectedPinIds = result.values.map((item: any) => item.id);
-        await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+        const updatePinSelection =
+                await sendMessage("update", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+        if (!updatePinSelection.success) {
+          console.log("No selection list found. Need to create one.");
+          const createSelectionList =
+                  await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+          console.log("Selection list created:", createSelectionList);
+        }
       }
     }
   }
