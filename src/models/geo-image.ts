@@ -154,10 +154,6 @@ export class GeoImage {
    * @returns Hex color string in format #RRGGBB
    */
   public static rgbToHex(color: ColorValue): string {
-    // if color is black return #949494
-    if (color.r === 0 && color.g === 0 && color.b === 0) {
-      return "#949494";
-    }
     const toHex = (n: number) => n.toString(16).padStart(2, "0");
     return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
   }
