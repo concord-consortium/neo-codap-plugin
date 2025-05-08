@@ -1,7 +1,10 @@
-import { addDataContextChangeListener, initializePlugin, sendMessage } from "@concord-consortium/codap-plugin-api";
+import { addDataContextChangeListener, codapInterface, initializePlugin, sendMessage
+} from "@concord-consortium/codap-plugin-api";
 import {
-  kInitialDimensions, kMapName, kOneMonthInSeconds, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName,
-  kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
+  kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName, kPinColorAttributeName,
+  kPluginName, kInitialDimensions, kVersion,
+  kDataContextName, kMapPinsCollectionName, kOneMonthInSeconds,
+  kMapName, kSliderComponentName, kChartGraphName, kXYGraphName,
 } from "../data/constants";
 import { pluginState } from "../models/plugin-state";
 
@@ -103,30 +106,64 @@ export async function createOrUpdateDateSlider(value: number, lowerBound:number,
 
 }
 interface IGraphValues {
+  name: string;
+  title?: string;
   xAttrName?: string;
   yAttrName?: string;
   legendAttrName?: string;
   showConnectingLines?: boolean;
 }
 
-export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const graph = await sendMessage("create", "component", {
+export const createOrUpdateGraphs = async (dataContext: string, graphValues: IGraphValues[]) => {
+  const existingComponents = await sendMessage("get", "componentList");
+  const existingGraphs = existingComponents.values.filter((comp: any) => comp.type === "graph");
+
+  if (existingGraphs.length > 0) {
+    existingGraphs.forEach(async (eGraph: any, idx: number) => {
+    // Update the existing graph
+      const updatedGraph =
+              await sendMessage("update", `component[${eGraph.id}]`, {
+                type: "graph",
+                dataContext,
+                title: graphValues[idx].title,
+                rescaleAxes: true,
+              });
+      return updatedGraph;
+    });
+  } else {
+    // Create a new graph
+    graphValues.forEach(async (graphValue: IGraphValues) => {
+      const graph = await sendMessage("create", "component", {
+        name: (graphValue.title)?.includes("Plot") ? kXYGraphName : kChartGraphName,
+        type: "graph",
+        dataContext,
+        title: graphValue.title,
+        xAttributeName: graphValue.xAttrName,
+        yAttributeName: graphValue.yAttrName,
+        legendAttributeName: graphValue.legendAttrName,
+      });
+      return graph;
+    });
+  }
+};
+
+export const addConnectingLinesToGraph = async () => {
+  const graph = await sendMessage("update", `component[${kXYGraphName}]`, {
     type: "graph",
-    dataContext,
-    name,
-    xAttributeName: graphValues.xAttrName,
-    yAttributeName: graphValues.yAttrName,
-    legendAttributeName: graphValues.legendAttrName,
+    showConnectingLines: true,
   });
   return graph;
 };
 
-export const addConnectingLinesToGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const graph = await sendMessage("update", `component[${name}]`, {
-    type: "graph",
-    showConnectingLines: graphValues.showConnectingLines,
+export const rescaleGraph = async (component: string) => {
+  const request = await codapInterface.sendRequest({
+    "action": "notify",
+    "resource": `component[${component}]`,
+    "values": {
+      "request": "autoScale",
+    }
   });
-  return graph;
+  return request;
 };
 
 export const deleteExistingGraphs = async () => {
@@ -140,26 +177,35 @@ export const deleteExistingGraphs = async () => {
   }
 };
 
-export const addRegionOfInterestToGraphs = async (dataContext: string, name: string, position: number | string) => {
-  const roiXYGraph = await sendMessage("create", `component[${name} Plot].adornment`, {
+export const addRegionOfInterestToGraphs = async (position: number | string) => {
+  const roiXYGraph = await sendMessage("create", `component[${kXYGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("create", `component[${name} Chart].adornment`, {
+  const roiCategoryChartGraph = await sendMessage("create", `component[${kChartGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph, roiCategoryChartGraph};
 };
 
-export const updateGraphRegionOfInterest = async (dataContext: string, name: string, position: number | string) => {
-  const roiXYGraph = await sendMessage("update", `component[${name} Plot].adornment`, {
+export const updateGraphRegionOfInterest = async (dataContext: string,position: number | string) => {
+  const roiXYGraph = await sendMessage("update", `component[${kXYGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("update", `component[${name} Chart].adornment`, {
+  const roiCategoryChartGraph = await sendMessage("update", `component[${kChartGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph, roiCategoryChartGraph};
+};
+
+export const updateLocationColorMap = async (colorMap: Record<string,string>) => {
+  const updateColorMap =
+          await sendMessage(
+                  "update",
+                  `dataContext[${kDataContextName}].collection[${kMapPinsCollectionName}].attribute[${"label"}]`,
+                  { colormap: colorMap });
+  return updateColorMap;
 };

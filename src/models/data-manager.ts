@@ -10,17 +10,15 @@ import {
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@concord-consortium/png-codec";
-import { kPinColorAttributeName } from "../data/constants";
-import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
-  deleteExistingGraphs, addRegionOfInterestToGraphs,
-  updateGraphRegionOfInterest} from "../utils/codap-utils";
+import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName } from "../data/constants";
+import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
+  addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
+} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
-export const kDataContextName = "NEOPluginData";
-const kMapPinsCollectionName = "Map Pins";
 const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
@@ -277,23 +275,44 @@ export class DataManager {
         });
       });
 
+      // FIXME: Change pin lat lon to geoname
+      const pinColorMap: Record<string, string> = {};
+      pluginState.pins.forEach(pin => {
+        pinColorMap[`${parseFloat(pin.lat.toFixed(2))}, ${parseFloat(pin.long.toFixed(2))}`] = pin.color;
+      });
+
       await updateDataContextTitle(neoDataset.label);
       await this.createMapPinsCollection();
       await this.createDatesChildCollection();
       await clearExistingCases();
-      await deleteExistingGraphs();
       await createItems(kDataContextName, items);
       await createTable(kDataContextName);
+      // The codap-plugin-api does not apply colormap property to attributes
+      // so we update the attribute after the collection is created
+      await updateLocationColorMap(pinColorMap);
       // We can't add the connecting lines on the first graph creation so we update it later
-      await createGraph(kDataContextName, `${neoDataset.label} Plot`,
-        {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
-      await createGraph(kDataContextName, `${neoDataset.label} Chart`,
-        {xAttrName: "label", yAttrName: "date", legendAttrName: "color"});
+      await createOrUpdateGraphs(kDataContextName,
+        [ { name: kXYGraphName,
+            title: `${neoDataset.label} Plot`,
+            xAttrName: "date",
+            yAttrName: "value",
+            legendAttrName: "label"
+          },
+          { name: kChartGraphName,
+            title: `${neoDataset.label} Chart`,
+            xAttrName: "label",
+            yAttrName: "date",
+            legendAttrName: "color"
+          }
+      ]);
       await this.createOrUpdateSlider();
       await this.updateMapAndGraphsWithItemIndex(0);
-      await addConnectingLinesToGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
+      await addConnectingLinesToGraph();
       const roiPosition = getTimestamp(this.loadedImages[0]);
-      await addRegionOfInterestToGraphs(kDataContextName, neoDataset.label, roiPosition);
+      await addRegionOfInterestToGraphs(roiPosition);
+      await rescaleGraph(kXYGraphName);
+      await rescaleGraph(kChartGraphName);
+
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
@@ -336,7 +355,7 @@ export class DataManager {
     }
 
     const startTime = getTimestamp(item);
-    await updateGraphRegionOfInterest(kDataContextName, neoDataset.label, startTime);
+    await updateGraphRegionOfInterest(kDataContextName, startTime);
   }
 
   private handleGlobalUpdate(notification: ClientNotification) {
@@ -373,8 +392,10 @@ export class DataManager {
   }
 
   private async createMapPinsCollection(): Promise<void> {
+    // The codap-plugin-api does not support colormap property to attributes
+    // so we update the attribute after the collection is created
     await createParentCollection(kDataContextName, kMapPinsCollectionName, [
-      { name: "label" },
+      { name: "label", type: "categorical"},
       { name: "pinColor", type: "color" }
     ]);
   }
