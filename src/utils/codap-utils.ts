@@ -48,7 +48,6 @@ export async function initializeNeoPlugin() {
   addDataContextChangeListener(kPinDataContextName, async notification => {
     const { operation, result } = notification.values;
     if (operation === "selectCases" && result.success) {
-      // const selectedPins = result.cases;
       console.log("result.cases", result.cases);
       const selectedPins = await getSelectionList(kPinDataContextName);
       console.log("selectedPins", selectedPins);
@@ -68,25 +67,36 @@ export async function initializeNeoPlugin() {
           return null;
         })
       );
-      // const selectedPinValues: IMapPin[] = [];
-      // selectedPins.forEach(async (pin: any) => {
-      //   console.log("pin", pin);
-      //   const pinItem = await getCaseByID(kPinDataContextName, pin.caseID);
-      //   console.log("pinItem", pinItem);
-      //   if (pinItem.success) {
-      //     const pinValues = pinItem.values;
-      //     console.log("pinValues", pinValues);
-      //     selectedPinValues.push({
-      //       id: pinValues.id,
-      //       lat: pinValues[kPinLatAttributeName],
-      //       long: pinValues[kPinLongAttributeName],
-      //       color: pinValues[kPinColorAttributeName]
-      //     }
-      //     );
-      //   }
-      // });
       console.log("selectedPinValues", selectedPinValues);
       pluginState.setSelectedPins(selectedPinValues);
+    }
+  });
+    // Set up a listener for case selection
+  addDataContextChangeListener(kDataContextName, async notification => {
+    const { operation, result } = notification.values;
+    if (operation === "selectCases" && result.success) {
+      // const selectedPins = result.cases;
+      console.log("result.cases", result.cases);
+      const selectedCases = await getSelectionList(kDataContextName);
+      console.log("selectedCases", selectedCases);
+      const selectedPinCases = selectedCases.filter((sCase: any) => sCase.collectionName === kMapPinsCollectionName);
+      const selectedCaseValues: any[] = await Promise.all(
+        selectedPinCases.map(async (sCase: any) => {
+          const caseItem = await getCaseByID(kDataContextName, sCase.caseID);
+          if (caseItem.success) {
+            const caseValues = caseItem.values;
+            console.log("caseValues", caseValues);
+            return {
+              id: caseValues.id,
+              label: caseValues.case.values.label,
+              pinColor: caseValues.case.values.pinColor,
+            };
+          }
+          return null;
+        })
+      );
+      console.log("selectedCaseValues", selectedCaseValues);
+      pluginState.setSelectedCases(selectedCaseValues);
     }
   });
 }

@@ -24,6 +24,7 @@ class PluginState {
   neoDatasetName = "";
   pins: IMapPin[] = [];
   selectedPins: IMapPin[] = [];
+  selectedCases: any[] =[];
 
   constructor() {
     makeAutoObservable(this);
@@ -32,6 +33,12 @@ class PluginState {
       () => this.selectedPins, // Observe changes to selectedPins
       (selectedPins) => {
         this.handleSelectedPinsChange(selectedPins);
+      }
+    );
+    reaction(
+      () => this.selectedCases, // Observe changes to selectedCases
+      (selectedCases) => {
+        this.handleSelectedCasesChange(selectedCases);
       }
     );
   }
@@ -61,6 +68,10 @@ class PluginState {
     this.selectedPins = selectedPins;
   }
 
+  setSelectedCases(selectedCases: any[]) {
+    this.selectedCases = selectedCases;
+  }
+
   async handleSelectedPinsChange(selectedPins: IMapPin[]): Promise<void> {
     console.log("Selected pins changed:", selectedPins);
     if (selectedPins.length === 0) {
@@ -70,7 +81,6 @@ class PluginState {
     }
     for (const pin of selectedPins) {
       console.log("Selected pin:", pin);
-      // const searchQuery = `label == ${pin.get("lat").toFixed(2)}, ${pin.get("long").toFixed(2)}`;
       const searchQuery = `label == ${pinLabel(pin)}`;
       console.log("Search query:", searchQuery);
       const result = await getCaseBySearch(kDataContextName, kMapPinsCollectionName, searchQuery);
@@ -83,6 +93,33 @@ class PluginState {
           console.log("No selection list found. Need to create one.");
           const createSelectionList =
                   await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+          console.log("Selection list created:", createSelectionList);
+        }
+      }
+    }
+  }
+
+  async handleSelectedCasesChange(selectedCases: any[]): Promise<void> {
+    console.log("Selected cases changed:", selectedCases);
+    if (selectedCases.length === 0) {
+      console.log("No selected cases");
+      await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, []);
+      return;
+    }
+    for (const sCase of selectedCases) {
+      console.log("Selected case:", sCase);
+      const searchQuery = `pinColor == ${sCase.pinColor}`;
+      console.log("Search query:", searchQuery);
+      const result = await getCaseBySearch(kPinDataContextName, kMapPinsCollectionName, searchQuery);
+
+      if (result.success) {
+        const selectedCaseIds = result.values.map((item: any) => item.id);
+        const updatePinSelection =
+                await sendMessage("update", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
+        if (!updatePinSelection.success) {
+          console.log("No selection list found. Need to create one.");
+          const createSelectionList =
+                  await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
           console.log("Selection list created:", createSelectionList);
         }
       }
