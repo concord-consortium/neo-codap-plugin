@@ -73,16 +73,12 @@ class PluginState {
   }
 
   async handleSelectedPinsChange(selectedPins: IMapPin[]): Promise<void> {
-    console.log("Selected pins changed:", selectedPins);
     if (selectedPins.length === 0) {
-      console.log("No selected pins");
       await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, []);
       return;
     }
     for (const pin of selectedPins) {
-      console.log("Selected pin:", pin);
       const searchQuery = `label == ${pinLabel(pin)}`;
-      console.log("Search query:", searchQuery);
       const result = await getCaseBySearch(kDataContextName, kMapPinsCollectionName, searchQuery);
 
       if (result.success) {
@@ -90,37 +86,32 @@ class PluginState {
         const updatePinSelection =
                 await sendMessage("update", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
         if (!updatePinSelection.success) {
-          console.log("No selection list found. Need to create one.");
-          const createSelectionList =
-                  await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
-          console.log("Selection list created:", createSelectionList);
+          await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
         }
       }
     }
   }
 
   async handleSelectedCasesChange(selectedCases: any[]): Promise<void> {
-    console.log("Selected cases changed:", selectedCases);
     if (selectedCases.length === 0) {
-      console.log("No selected cases");
       await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, []);
       return;
     }
     for (const sCase of selectedCases) {
-      console.log("Selected case:", sCase);
       const searchQuery = `pinColor == ${sCase.pinColor}`;
-      console.log("Search query:", searchQuery);
       const result = await getCaseBySearch(kPinDataContextName, kMapPinsCollectionName, searchQuery);
 
       if (result.success) {
         const selectedCaseIds = result.values.map((item: any) => item.id);
-        const updatePinSelection =
-                await sendMessage("update", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
-        if (!updatePinSelection.success) {
-          console.log("No selection list found. Need to create one.");
-          const createSelectionList =
-                  await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
-          console.log("Selection list created:", createSelectionList);
+        if (selectedCases.length === 1) {
+          await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
+          return;
+        } else {
+          const updatePinSelection =
+                  await sendMessage("update", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
+          if (!updatePinSelection.success) {
+            await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
+          }
         }
       }
     }
