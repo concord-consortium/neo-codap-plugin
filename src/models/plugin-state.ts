@@ -83,11 +83,17 @@ class PluginState {
 
       if (result.success) {
         const selectedPinIds = result.values.map((item: any) => item.id);
-        const updatePinSelection =
-                await sendMessage("update", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
-        if (!updatePinSelection.success) {
+        if (selectedPins.length === 1) {
           await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
-        }
+          return;
+        } else {
+          // If the update fails, create a new selection list
+          const updatePinSelection =
+                  await sendMessage("update", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+          if (!updatePinSelection.success) {
+            await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+          }
+      }
       }
     }
   }
@@ -107,9 +113,9 @@ class PluginState {
           await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
           return;
         } else {
-          const updatePinSelection =
+          const updateCaseSelection =
                   await sendMessage("update", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
-          if (!updatePinSelection.success) {
+          if (!updateCaseSelection.success) {
             await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
           }
         }
