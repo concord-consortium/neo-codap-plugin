@@ -1,3 +1,28 @@
+.dataset-tab {
+  display: grid;
+  grid-template-columns: 296px 1fr; /* Equal space for left and right panels */
+  gap: 8px; /* Optional: Add some spacing between the panels */
+  height: 100%;
+}
+
+.dataset-tab .left-panel {
+  text-align: center;
+  background-color: white;
+  font-family: "Montserrat", sans-serif !important;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+  padding: 12px;
+}
+
+.dataset-tab .right-panel {
+  background-color: white; /* Match the left panel's background */
+  padding: 12px; /* Add padding for consistency */
+  height: 100%;
+  min-height: 0; /* Prevent overflow */
+  min-width: 0; /* Prevent overflow */
+}
+
 .legend-container{
   margin: 8px 0;
   display: flex;

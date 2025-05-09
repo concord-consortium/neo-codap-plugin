@@ -1,7 +1,7 @@
 export const kPluginName = "NASA Earth Data Plugin";
 export const kVersion = "0.0.1";
 export const kInitialDimensions = {
-  width: 315,
+  width: 600,
   height: 410
 };
 

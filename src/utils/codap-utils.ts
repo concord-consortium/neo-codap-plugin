@@ -6,7 +6,7 @@ import {
 import { pluginState } from "../models/plugin-state";
 
 export async function initializeNeoPlugin() {
-  initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
+  await initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
 
   // Create the pin dataset
   await sendMessage("create", `dataContext`, {
@@ -145,11 +145,7 @@ export const addRegionOfInterestToGraphs = async (dataContext: string, name: str
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("create", `component[${name} Chart].adornment`, {
-    type: "Region of Interest",
-    primary: {position, "extent": kOneMonthInSeconds}
-  });
-  return {roiXYGraph, roiCategoryChartGraph};
+  return {roiXYGraph};
 };
 
 export const updateGraphRegionOfInterest = async (dataContext: string, name: string, position: number | string) => {
@@ -157,9 +153,5 @@ export const updateGraphRegionOfInterest = async (dataContext: string, name: str
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("update", `component[${name} Chart].adornment`, {
-    type: "Region of Interest",
-    primary: {position, "extent": kOneMonthInSeconds}
-  });
-  return {roiXYGraph, roiCategoryChartGraph};
+  return {roiXYGraph};
 };
