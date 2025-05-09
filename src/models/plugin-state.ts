@@ -1,10 +1,11 @@
-import { getAllItems, getCaseBySearch, IResult, sendMessage } from "@concord-consortium/codap-plugin-api";
+import { getAllItems, getCaseBySearch, IResult } from "@concord-consortium/codap-plugin-api";
 import { makeAutoObservable, reaction } from "mobx";
 import {
   kDataContextName,
   kMapPinsCollectionName,
   kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName
 } from "../data/constants";
+import { createSelectionList, deleteSelectionList, updateSelectionList } from "../utils/codap-utils";
 import { NeoDataset } from "./neo-types";
 
 export interface IMapPin {
@@ -12,6 +13,11 @@ export interface IMapPin {
   id: string;
   lat: number;
   long: number;
+}
+
+export interface ILocationCase {
+  label: string;
+  pinColor: string;
 }
 
 export function pinLabel(pin: IMapPin) {
@@ -28,17 +34,28 @@ class PluginState {
 
   constructor() {
     makeAutoObservable(this);
-    //  // Reaction to changes in selectedPins
+    // Reaction to changes in selectedPins from MapPinDataContext
     reaction(
-      () => this.selectedPins, // Observe changes to selectedPins
+      () => this.selectedPins,
       (selectedPins) => {
-        this.handleSelectedPinsChange(selectedPins);
+        this.handleSelectionChange(
+          selectedPins,
+          kDataContextName,
+          kMapPinsCollectionName,
+          (pin) => `label == ${pinLabel(pin)}`
+        );
       }
     );
+    // Reaction to changes in selectedCases NEOPluginDataContext
     reaction(
-      () => this.selectedCases, // Observe changes to selectedCases
+      () => this.selectedCases,
       (selectedCases) => {
-        this.handleSelectedCasesChange(selectedCases);
+        this.handleSelectionChange(
+          selectedCases,
+          kPinDataContextName,
+          kMapPinsCollectionName,
+          (sCase) => `pinColor == ${sCase.pinColor}`
+        );
       }
     );
   }
@@ -72,51 +89,27 @@ class PluginState {
     this.selectedCases = selectedCases;
   }
 
-  async handleSelectedPinsChange(selectedPins: IMapPin[]): Promise<void> {
-    if (selectedPins.length === 0) {
-      await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, []);
+  async handleSelectionChange<T>(
+    selectedItems: T[], dataContextName: string, collectionName: string, searchQueryFn: (item: T) => string
+  ): Promise<void> {
+    if (selectedItems.length === 0) {
+      deleteSelectionList(dataContextName);
       return;
     }
-    for (const pin of selectedPins) {
-      const searchQuery = `label == ${pinLabel(pin)}`;
-      const result = await getCaseBySearch(kDataContextName, kMapPinsCollectionName, searchQuery);
+
+    for (const item of selectedItems) {
+      const searchQuery = searchQueryFn(item);
+      const result = await getCaseBySearch(dataContextName, collectionName, searchQuery);
 
       if (result.success) {
-        const selectedPinIds = result.values.map((item: any) => item.id);
-        if (selectedPins.length === 1) {
-          await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
+        const selectedItemIds = result.values.map((val: any) => val.id);
+        if (selectedItems.length === 1) {
+          createSelectionList(dataContextName, selectedItemIds);
           return;
         } else {
-          // If the update fails, create a new selection list
-          const updatePinSelection =
-                  await sendMessage("update", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
-          if (!updatePinSelection.success) {
-            await sendMessage("create", `dataContext[${kDataContextName}].selectionList`, selectedPinIds);
-          }
-      }
-      }
-    }
-  }
-
-  async handleSelectedCasesChange(selectedCases: any[]): Promise<void> {
-    if (selectedCases.length === 0) {
-      await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, []);
-      return;
-    }
-    for (const sCase of selectedCases) {
-      const searchQuery = `pinColor == ${sCase.pinColor}`;
-      const result = await getCaseBySearch(kPinDataContextName, kMapPinsCollectionName, searchQuery);
-
-      if (result.success) {
-        const selectedCaseIds = result.values.map((item: any) => item.id);
-        if (selectedCases.length === 1) {
-          await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
-          return;
-        } else {
-          const updateCaseSelection =
-                  await sendMessage("update", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
-          if (!updateCaseSelection.success) {
-            await sendMessage("create", `dataContext[${kPinDataContextName}].selectionList`, selectedCaseIds);
+          const updateSelection = await updateSelectionList(dataContextName, selectedItemIds);
+          if (!updateSelection.success) {
+            createSelectionList(dataContextName, selectedItemIds);
           }
         }
       }

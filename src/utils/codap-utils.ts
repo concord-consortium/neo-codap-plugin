@@ -68,7 +68,7 @@ export async function initializeNeoPlugin() {
       pluginState.setSelectedPins(selectedPinValues);
     }
   });
-  
+
   // Set up a listener for case selection
   addDataContextChangeListener(kDataContextName, async notification => {
     const { operation, result } = notification.values;
@@ -269,4 +269,17 @@ export const getSelectionList = async (dataContext: string) => {
     console.error("Error getting selection list");
     return [];
   }
+};
+
+export const deleteSelectionList = async (dataContext: string) => {
+  await sendMessage("create", `dataContext[${dataContext}].selectionList`, []);
+};
+
+export const createSelectionList = async (dataContext: string, selectedCaseIds: string[]) => {
+  await sendMessage("create", `dataContext[${dataContext}].selectionList`, selectedCaseIds);
+};
+
+export const updateSelectionList = async (dataContext: string, selectedCaseIds: string[]) => {
+  const result = await sendMessage("update", `dataContext[${dataContext}].selectionList`, selectedCaseIds);
+  return result;
 };
