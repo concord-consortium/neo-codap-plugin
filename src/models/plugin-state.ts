@@ -4,7 +4,8 @@ import {
   kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName
 } from "../data/constants";
 import { NeoDataset } from "./neo-types";
-import { geoLocSearch } from "../utils/location-utils";
+import { getMapComponentInfo } from "../utils/codap-utils";
+import { geoLocSearch, MapComponentInfo } from "../utils/location-utils";
 
 interface IMapPin {
   color: string;
@@ -34,13 +35,16 @@ class PluginState {
 
   *updatePins(): Generator<Promise<IResult>, void, IResult> {
     const pinResult = yield(getAllItems(kPinDataContextName));
+    const map = yield getMapComponentInfo();
+    const mapInfo = map.values as MapComponentInfo;
+    const bounds = mapInfo?.bounds ?? {north: 90, south: -90, east: 180,west: -180};
     if (pinResult.success) {
       const pinData = pinResult.values as any;
       const labels: string[] = [];
       for (const pin of pinData) {
         const lat = pin.values[kPinLatAttributeName];
         const long = pin.values[kPinLongAttributeName];
-        const locationResult = yield geoLocSearch(lat, long);
+        const locationResult = yield geoLocSearch(lat, long, bounds);
         const label = locationResult.values.location;
         labels.push(label);
       }

@@ -209,3 +209,12 @@ export const updateLocationColorMap = async (colorMap: Record<string,string>) =>
                   { colormap: colorMap });
   return updateColorMap;
 };
+
+export const getMapComponentInfo = async () => {
+  const mapInfo = await sendMessage("get", `component[${kMapName}]`);
+  if (mapInfo.success) {
+    return mapInfo;
+  } else {
+    return Promise.reject(mapInfo);
+  }
+}
