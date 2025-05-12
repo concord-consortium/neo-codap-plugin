@@ -12,8 +12,8 @@ import {
 import { decodePng } from "@concord-consortium/png-codec";
 import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName  } from "../data/constants";
 import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
-    addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
-  } from "../utils/codap-utils";
+  addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
+} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
