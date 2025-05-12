@@ -1,47 +1,7 @@
-import { addDataContextChangeListener, codapInterface, initializePlugin, sendMessage
-} from "@concord-consortium/codap-plugin-api";
-import {
-  kPinDataContextName, kPinLatAttributeName, kPinLongAttributeName, kPinColorAttributeName,
-  kPluginName, kInitialDimensions, kVersion,
-  kDataContextName, kMapPinsCollectionName, kOneMonthInSeconds,
-  kMapName, kSliderComponentName, kChartGraphName, kXYGraphName,
-} from "../data/constants";
-import { pluginState } from "../models/plugin-state";
-
-export async function initializeNeoPlugin() {
-  initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
-
-  // Create the pin dataset
-  await sendMessage("create", `dataContext`, {
-    name: kPinDataContextName,
-    collections: [
-      {
-        name: "Map Pins",
-        attrs: [
-          { name: kPinLatAttributeName, type: "numeric" },
-          { name: kPinLongAttributeName, type: "numeric" },
-          { name: kPinColorAttributeName, type: "color" }
-        ]
-      }
-    ]
-  });
-
-  // Create map if it doesn't exist
-  await createOrUpdateMap("Map");
-
-  // See if there are any existing pins
-  pluginState.updatePins();
-
-  // Set up a listener for changes to the pin dataset
-  addDataContextChangeListener(kPinDataContextName, notification => {
-    const { operation } = notification.values;
-
-    if (["createCases", "deleteCases", "updateCases"].includes(operation)) {
-      pluginState.updatePins();
-    }
-  });
-
-}
+import { codapInterface, sendMessage }
+  from "@concord-consortium/codap-plugin-api";
+import { kOneMonthInSeconds, kMapName, kMapPinsCollectionName, kDataContextName, kSliderComponentName,
+  kChartGraphName, kXYGraphName } from "../data/constants";
 
 export async function createOrUpdateMap(title: string, url?: string): Promise<void> {
   const mapProps: Record<string, any> = {
@@ -208,4 +168,27 @@ export const updateLocationColorMap = async (colorMap: Record<string,string>) =>
                   `dataContext[${kDataContextName}].collection[${kMapPinsCollectionName}].attribute[${"label"}]`,
                   { colormap: colorMap });
   return updateColorMap;
+};
+
+export const getSelectionList = async (dataContext: string) => {
+  const selectionList = await sendMessage("get", `dataContext[${dataContext}].selectionList`);
+  if (selectionList.success) {
+    return selectionList.values;
+  } else {
+    console.error("Error getting selection list");
+    return [];
+  }
+};
+
+export const deleteSelectionList = async (dataContext: string) => {
+  await sendMessage("create", `dataContext[${dataContext}].selectionList`, []);
+};
+
+export const createSelectionList = async (dataContext: string, selectedCaseIds: string[]) => {
+  await sendMessage("create", `dataContext[${dataContext}].selectionList`, selectedCaseIds);
+};
+
+export const updateSelectionList = async (dataContext: string, selectedCaseIds: string[]) => {
+  const result = await sendMessage("update", `dataContext[${dataContext}].selectionList`, selectedCaseIds);
+  return result;
 };

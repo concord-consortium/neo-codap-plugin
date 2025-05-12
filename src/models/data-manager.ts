@@ -10,7 +10,7 @@ import {
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@concord-consortium/png-codec";
-import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName } from "../data/constants";
+import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName  } from "../data/constants";
 import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
   addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
 } from "../utils/codap-utils";
