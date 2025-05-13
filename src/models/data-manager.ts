@@ -145,7 +145,7 @@ export class DataManager {
 
       pluginState.pins.forEach(pin => {
         const extractedColor = geoImage.extractColor(pin.lat, pin.long);
-        const label = pinLabel(pin);
+        const label = pin.label || pinLabel(pin);
         const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(extractedColor)] ?? -1;
         const paletteValue = neoDataset.paletteToValue(paletteIndex);
         const color = paletteValue === null ? {r: 148, g: 148, b: 148} : extractedColor;

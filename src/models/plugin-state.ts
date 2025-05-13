@@ -9,9 +9,9 @@ import {
   kPluginName,
   kVersion
 } from "../data/constants";
-import { createOrUpdateMap, createSelectionList, deleteSelectionList, updateSelectionList } from "../utils/codap-utils";
+import { createOrUpdateMap, createSelectionList, deleteSelectionList, updateSelectionList,
+  getMapComponentInfo } from "../utils/codap-utils";
 import { NeoDataset } from "./neo-types";
-import { getMapComponentInfo } from "../utils/codap-utils";
 import { geoLocSearch, MapComponentInfo } from "../utils/location-utils";
 
 export interface IMapPin {

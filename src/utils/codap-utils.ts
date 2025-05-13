@@ -199,4 +199,4 @@ export const getMapComponentInfo = async () => {
   } else {
     return Promise.reject(mapInfo);
   }
-}
+};
