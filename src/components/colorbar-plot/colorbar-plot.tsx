@@ -59,11 +59,14 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
   });
 
   // Add the next month to the yLabels
-  const lastDateMonth = new Date(yLabels[yLabels.length - 1]).getMonth() + 1;
-  const lastDateYear = new Date(yLabels[yLabels.length - 1]).getFullYear();
-  // Note: Javascript correctly handles a month of 13 as the next year
-  const lastDate = new Date(lastDateYear, lastDateMonth);
-  yLabels.push(lastDate.toISOString().split("T")[0]);
+  // We use UTC methods to avoid timezone issues
+  const lastDate = new Date(yLabels[yLabels.length - 1]);
+  // These are 0 based months
+  const lastDateMonth = new Date(lastDate).getUTCMonth();
+  const lastDateYear = new Date(lastDate).getUTCFullYear();
+  // Javascript correctly handles a month of 12 as the next year
+  const endDate = new Date(Date.UTC(lastDateYear, lastDateMonth + 1));
+  yLabels.push(endDate.toISOString().split("T")[0]);
 
   const selectedYMDDate = loadedImages[currentImageIndex].date;
 
@@ -89,6 +92,21 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
     });
   });
   const datasets: IDataset[] = Array.from(datasetMap.values());
+
+  // After creating the datasets, add a check for date ranges are only 1 month
+  const invalidDateRanges = datasets.flatMap(dataset =>
+    dataset.data.filter(dataPoint => {
+      const [startDate, _endDate] = dataPoint.y;
+      const start = new Date(startDate);
+      const end = new Date(_endDate);
+      const diffInMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+      return diffInMonths !== 1;
+    })
+  );
+
+  if (invalidDateRanges.length > 0) {
+    console.warn("Found data points with date ranges greater than 1 month:", invalidDateRanges);
+  }
 
   // Note: any is used here as the Bar type doesn't support the `events:` list but the code does
   const options: any = {
