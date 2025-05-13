@@ -281,7 +281,7 @@ export class DataManager {
       // FIXME: Change pin lat lon to geoname
       const pinColorMap: Record<string, string> = {};
       pluginState.pins.forEach(pin => {
-        pinColorMap[`${parseFloat(pin.lat.toFixed(2))}, ${parseFloat(pin.long.toFixed(2))}`] = pin.color;
+        pinColorMap[pinLabel(pin)] = pin.color;
       });
 
       await updateDataContextTitle(neoDataset.label);
