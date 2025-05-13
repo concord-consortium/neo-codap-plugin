@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
+import { initializeNeoPlugin } from "../models/plugin-state";
 import { isNonEmbedded } from "../utils/embed-check";
-import { initializeNeoPlugin } from "../utils/codap-utils";
 import { TabContainer } from "./tabs/tab-container";
 import { Provider } from "./ui/provider";
 
