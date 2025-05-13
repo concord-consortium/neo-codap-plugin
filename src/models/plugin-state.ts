@@ -9,9 +9,9 @@ import {
   kPluginName,
   kVersion
 } from "../data/constants";
-import { createOrUpdateMap, createSelectionList, deleteSelectionList, updateSelectionList } from "../utils/codap-utils";
+import { createOrUpdateMap, createSelectionList, deleteSelectionList, updateSelectionList,
+  getMapComponentInfo } from "../utils/codap-utils";
 import { NeoDataset } from "./neo-types";
-import { getMapComponentInfo } from "../utils/codap-utils";
 import { geoLocSearch, MapComponentInfo } from "../utils/location-utils";
 
 export interface IMapPin {
@@ -84,12 +84,14 @@ class PluginState {
         const lat = pin.values[kPinLatAttributeName];
         const long = pin.values[kPinLongAttributeName];
         const locationResult = yield geoLocSearch(lat, long, bounds);
+        console.log("locationResult", locationResult);
         const label = locationResult.values.location;
         labels.push(label);
       }
 
       this.pins = pinData.map((pin: any, index: number) => {
         const values = pin.values;
+        console.log("labels", labels);
         return {
           color: values[kPinColorAttributeName],
           id: pin.id,

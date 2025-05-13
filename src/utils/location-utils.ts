@@ -64,9 +64,9 @@ export const geoLocSearch = async (lat: number, long: number, bounds: IBounds) =
   const populationLimitClause = "city15000";
   // boundsClause is used if using citiesJSON service
   const boundsClause = `north=${bounds.north}&south=${bounds.south}&east=${bounds.east}&west=${bounds.west}`;
-  // const url = `${kGeolocCitiesService}?${[locClause, userClause, boundsClause, maxRowsClause].join("&")}`;
-  const url = `${kGeolocService}?${[locClause, userClause, maxRowsClause, radiusClause, populationLimitClause ]
-                  .join("&")}`;
+  const url = `${kGeolocCitiesService}?${[locClause, userClause, boundsClause, maxRowsClause].join("&")}`;
+  // const url = `${kGeolocService}?${[locClause, userClause, maxRowsClause, radiusClause, populationLimitClause ]
+  //                 .join("&")}`;
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -87,14 +87,14 @@ export const geoLocSearch = async (lat: number, long: number, bounds: IBounds) =
       console.log("sorted geonames", JSON.parse(JSON.stringify(sortedGeonamesByPopulation)));
 
       // find the nearest location nearest the lat/long. We use the commented out code if using the citiesJSON service
-      // const nearest = findNearestCity(lat, long, data.geonames);
-      const nearest = sortedGeonamesByPopulation[0];
+      const nearest = findNearestCity(lat, long, data.geonames);
+      // const nearest = sortedGeonamesByPopulation[0];
       console.log("nearest location", JSON.parse(JSON.stringify(nearest)));
       return nearest
-        ? {success: true, values: {location:`${nearest.name}, ${nearest.adminCode1}`}}
+        // ? {success: true, values: {location:`${nearest.name}, ${nearest.adminCode1}`}}
         // Return this value if using the citiesJSON service.
         // citiesJSON service does not have adminCode1 (state name), se we use countrycode
-        // ? {success: true, values: {location:`${nearest.name}, ${nearest.countrycode}`}}
+        ? {success: true, values: {location:`${nearest.name}, ${nearest.countrycode}`}}
         : {success: false, values: {location: "Unknown Location"}};
     } else {
       return Promise.reject(response.statusText);

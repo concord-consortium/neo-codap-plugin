@@ -145,7 +145,7 @@ export class DataManager {
 
       pluginState.pins.forEach(pin => {
         const extractedColor = geoImage.extractColor(pin.lat, pin.long);
-        const label = pinLabel(pin);
+        const label = pin.label || pinLabel(pin);
         const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(extractedColor)] ?? -1;
         const paletteValue = neoDataset.paletteToValue(paletteIndex);
         const color = paletteValue === null ? {r: 148, g: 148, b: 148} : extractedColor;
@@ -264,7 +264,9 @@ export class DataManager {
         if (!image?.pins) {
           return;
         }
+        console.log("image.pins", image.pins);
         Object.values(image.pins).forEach(pin => {
+          console.log("pin", pin);
           items.push({
             date: image.date,
             color: pin.color,
@@ -281,7 +283,8 @@ export class DataManager {
       // FIXME: Change pin lat lon to geoname
       const pinColorMap: Record<string, string> = {};
       pluginState.pins.forEach(pin => {
-        pinColorMap[`${parseFloat(pin.lat.toFixed(2))}, ${parseFloat(pin.long.toFixed(2))}`] = pin.color;
+        pinColorMap[`${pin.label}`] = pin.color;
+        // pinColorMap[`${parseFloat(pin.lat.toFixed(2))}, ${parseFloat(pin.long.toFixed(2))}`] = pin.color;
       });
 
       await updateDataContextTitle(neoDataset.label);
