@@ -10,7 +10,7 @@ import {
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@concord-consortium/png-codec";
-import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName } from "../data/constants";
+import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName  } from "../data/constants";
 import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
   addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
 } from "../utils/codap-utils";
@@ -144,13 +144,16 @@ export class DataManager {
       };
 
       pluginState.pins.forEach(pin => {
-        const color = geoImage.extractColor(pin.lat, pin.long);
-        const label = pin.label || pinLabel(pin);
-        const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(color)] ?? -1;
+        const extractedColor = geoImage.extractColor(pin.lat, pin.long);
+        const label = pinLabel(pin);
+        const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(extractedColor)] ?? -1;
+        const paletteValue = neoDataset.paletteToValue(paletteIndex);
+        const color = paletteValue === null ? {r: 148, g: 148, b: 148} : extractedColor;
+
         neoDatasetImage.pins[label] = {
           color: GeoImage.rgbToHex(color),
           paletteIndex,
-          value: neoDataset.paletteToValue(paletteIndex),
+          value: paletteValue,
           label,
           pinColor: pin.color,
         };

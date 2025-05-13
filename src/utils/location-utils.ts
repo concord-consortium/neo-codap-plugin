@@ -58,8 +58,8 @@ export const geoLocSearch = async (lat: number, long: number, bounds: IBounds) =
   const userClause = `username=${kGeonamesUser}`;
   const locClause = `lat=${lat}&lng=${long}`;
   const boundsClause = `north=${bounds.north}&south=${bounds.south}&east=${bounds.east}&west=${bounds.west}`;
-  const maxRowsClause = `maxRows=20`;
-  const radiusClause = `radius=10`;
+  const maxRowsClause = `maxRows=50`;
+  const radiusClause = `radius=25`;
   const populationLimitClause = "city15000";
   // const url = `${kGeolocCitiesService}?${[locClause, userClause, boundsClause, maxRowsClause].join("&")}`;
   const url = `${kGeolocService}?${[locClause, userClause, maxRowsClause, radiusClause, populationLimitClause ]
@@ -68,7 +68,10 @@ export const geoLocSearch = async (lat: number, long: number, bounds: IBounds) =
     const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
-      const geonames = data.geonames;
+      // filter out geonames where population is 0
+      const geonames = data.geonames.filter((geoname: any) => {
+        return geoname.population > 0;
+      });
       console.log("GeoLocSearch geonames", JSON.parse(JSON.stringify(geonames)));
       console.log("data size", geonames.length);
       const sortedGeonamesByPopulation = geonames.sort((a: any, b: any) => {
