@@ -1,44 +1,8 @@
-import { addDataContextChangeListener, initializePlugin, sendMessage } from "@concord-consortium/codap-plugin-api";
+import { codapInterface, sendMessage } from "@concord-consortium/codap-plugin-api";
 import {
-  kInitialDimensions, kMapName, kOneMonthInSeconds, kPinColorAttributeName, kPinDataContextName, kPinLatAttributeName,
-  kPinLongAttributeName, kPluginName, kSliderComponentName, kVersion
+  kOneMonthInSeconds, kMapName, kMapPinsCollectionName, kDataContextName, kSliderComponentName,
+  kXYGraphName, kChartGraphName
 } from "../data/constants";
-import { pluginState } from "../models/plugin-state";
-
-export async function initializeNeoPlugin() {
-  await initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
-
-  // Create the pin dataset
-  await sendMessage("create", `dataContext`, {
-    name: kPinDataContextName,
-    collections: [
-      {
-        name: "Map Pins",
-        attrs: [
-          { name: kPinLatAttributeName, type: "numeric" },
-          { name: kPinLongAttributeName, type: "numeric" },
-          { name: kPinColorAttributeName, type: "color" }
-        ]
-      }
-    ]
-  });
-
-  // Create map if it doesn't exist
-  await createOrUpdateMap("Map");
-
-  // See if there are any existing pins
-  pluginState.updatePins();
-
-  // Set up a listener for changes to the pin dataset
-  addDataContextChangeListener(kPinDataContextName, notification => {
-    const { operation } = notification.values;
-
-    if (["createCases", "deleteCases", "updateCases"].includes(operation)) {
-      pluginState.updatePins();
-    }
-  });
-
-}
 
 export async function createOrUpdateMap(title: string, url?: string): Promise<void> {
   const mapProps: Record<string, any> = {
@@ -103,30 +67,64 @@ export async function createOrUpdateDateSlider(value: number, lowerBound:number,
 
 }
 interface IGraphValues {
+  name: string;
+  title?: string;
   xAttrName?: string;
   yAttrName?: string;
   legendAttrName?: string;
   showConnectingLines?: boolean;
 }
 
-export const createGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const graph = await sendMessage("create", "component", {
+export const createOrUpdateGraphs = async (dataContext: string, graphValues: IGraphValues[]) => {
+  const existingComponents = await sendMessage("get", "componentList");
+  const existingGraphs = existingComponents.values.filter((comp: any) => comp.type === "graph");
+
+  if (existingGraphs.length > 0) {
+    existingGraphs.forEach(async (eGraph: any, idx: number) => {
+    // Update the existing graph
+      const updatedGraph =
+              await sendMessage("update", `component[${eGraph.id}]`, {
+                type: "graph",
+                dataContext,
+                title: graphValues[idx].title,
+                rescaleAxes: true,
+              });
+      return updatedGraph;
+    });
+  } else {
+    // Create a new graph
+    graphValues.forEach(async (graphValue: IGraphValues) => {
+      const graph = await sendMessage("create", "component", {
+        name: (graphValue.title)?.includes("Plot") ? kXYGraphName : kChartGraphName,
+        type: "graph",
+        dataContext,
+        title: graphValue.title,
+        xAttributeName: graphValue.xAttrName,
+        yAttributeName: graphValue.yAttrName,
+        legendAttributeName: graphValue.legendAttrName,
+      });
+      return graph;
+    });
+  }
+};
+
+export const addConnectingLinesToGraph = async () => {
+  const graph = await sendMessage("update", `component[${kXYGraphName}]`, {
     type: "graph",
-    dataContext,
-    name,
-    xAttributeName: graphValues.xAttrName,
-    yAttributeName: graphValues.yAttrName,
-    legendAttributeName: graphValues.legendAttrName,
+    showConnectingLines: true,
   });
   return graph;
 };
 
-export const addConnectingLinesToGraph = async (dataContext: string, name: string, graphValues: IGraphValues) => {
-  const graph = await sendMessage("update", `component[${name}]`, {
-    type: "graph",
-    showConnectingLines: graphValues.showConnectingLines,
+export const rescaleGraph = async (component: string) => {
+  const request = await codapInterface.sendRequest({
+    "action": "notify",
+    "resource": `component[${component}]`,
+    "values": {
+      "request": "autoScale",
+    }
   });
-  return graph;
+  return request;
 };
 
 export const deleteExistingGraphs = async () => {
@@ -140,18 +138,50 @@ export const deleteExistingGraphs = async () => {
   }
 };
 
-export const addRegionOfInterestToGraphs = async (dataContext: string, name: string, position: number | string) => {
-  const roiXYGraph = await sendMessage("create", `component[${name} Plot].adornment`, {
+export const addRegionOfInterestToGraphs = async (position: number | string) => {
+  const roiXYGraph = await sendMessage("create", `component[${kXYGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph};
 };
 
-export const updateGraphRegionOfInterest = async (dataContext: string, name: string, position: number | string) => {
-  const roiXYGraph = await sendMessage("update", `component[${name} Plot].adornment`, {
+export const updateGraphRegionOfInterest = async (dataContext: string,position: number | string) => {
+  const roiXYGraph = await sendMessage("update", `component[${kXYGraphName}].adornment`, {
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
   return {roiXYGraph};
+};
+
+export const updateLocationColorMap = async (colorMap: Record<string,string>) => {
+  const updateColorMap =
+          await sendMessage(
+                  "update",
+                  `dataContext[${kDataContextName}].collection[${kMapPinsCollectionName}].attribute[${"label"}]`,
+                  { colormap: colorMap });
+  return updateColorMap;
+};
+
+export const getSelectionList = async (dataContext: string) => {
+  const selectionList = await sendMessage("get", `dataContext[${dataContext}].selectionList`);
+  if (selectionList.success) {
+    return selectionList.values;
+  } else {
+    console.error("Error getting selection list");
+    return [];
+  }
+};
+
+export const deleteSelectionList = async (dataContext: string) => {
+  await sendMessage("create", `dataContext[${dataContext}].selectionList`, []);
+};
+
+export const createSelectionList = async (dataContext: string, selectedCaseIds: string[]) => {
+  await sendMessage("create", `dataContext[${dataContext}].selectionList`, selectedCaseIds);
+};
+
+export const updateSelectionList = async (dataContext: string, selectedCaseIds: string[]) => {
+  const result = await sendMessage("update", `dataContext[${dataContext}].selectionList`, selectedCaseIds);
+  return result;
 };

@@ -11,17 +11,15 @@ import {
   sendMessage,
 } from "@concord-consortium/codap-plugin-api";
 import { decodePng } from "@concord-consortium/png-codec";
-import { kPinColorAttributeName } from "../data/constants";
-import { createGraph, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
-  deleteExistingGraphs, addRegionOfInterestToGraphs,
-  updateGraphRegionOfInterest} from "../utils/codap-utils";
+import { kChartGraphName, kDataContextName, kMapPinsCollectionName, kXYGraphName  } from "../data/constants";
+import { createOrUpdateGraphs, createOrUpdateDateSlider, createOrUpdateMap, addConnectingLinesToGraph,
+  addRegionOfInterestToGraphs, updateGraphRegionOfInterest, updateLocationColorMap, rescaleGraph
+} from "../utils/codap-utils";
 import { GeoImage } from "./geo-image";
 import { NeoDataset, NeoImageInfo } from "./neo-types";
 import { kImageLoadDelay, kMaxSerialImages, kParallelLoad } from "./config";
 import { pinLabel, pluginState } from "./plugin-state";
 
-export const kDataContextName = "NEOPluginData";
-const kMapPinsCollectionName = "Map Pins";
 const kDatesCollectionName = "Available Dates";
 
 async function clearExistingCases(): Promise<void> {
@@ -152,13 +150,16 @@ export class DataManager {
       };
 
       pluginState.pins.forEach(pin => {
-        const color = geoImage.extractColor(pin.lat, pin.long);
+        const extractedColor = geoImage.extractColor(pin.lat, pin.long);
         const label = pinLabel(pin);
-        const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(color)] ?? -1;
+        const paletteIndex = this.reversePalette?.[GeoImage.rgbToNumber(extractedColor)] ?? -1;
+        const paletteValue = neoDataset.paletteToValue(paletteIndex);
+        const color = paletteValue === null ? {r: 148, g: 148, b: 148} : extractedColor;
+
         neoDatasetImage.pins[label] = {
           color: GeoImage.rgbToHex(color),
           paletteIndex,
-          value: neoDataset.paletteToValue(paletteIndex),
+          value: paletteValue,
           label,
           pinColor: pin.color,
         };
@@ -285,21 +286,38 @@ export class DataManager {
         });
       });
 
+      // FIXME: Change pin lat lon to geoname
+      const pinColorMap: Record<string, string> = {};
+      pluginState.pins.forEach(pin => {
+        pinColorMap[`${parseFloat(pin.lat.toFixed(2))}, ${parseFloat(pin.long.toFixed(2))}`] = pin.color;
+      });
+
       await updateDataContextTitle(neoDataset.label);
       await this.createMapPinsCollection();
       await this.createDatesChildCollection();
       await clearExistingCases();
-      await deleteExistingGraphs();
       await createItems(kDataContextName, items);
       await createTable(kDataContextName);
+      // The codap-plugin-api does not apply colormap property to attributes
+      // so we update the attribute after the collection is created
+      await updateLocationColorMap(pinColorMap);
       // We can't add the connecting lines on the first graph creation so we update it later
-      await createGraph(kDataContextName, `${neoDataset.label} Plot`,
-        {xAttrName: "date", yAttrName: "value", legendAttrName: kPinColorAttributeName});
+      await createOrUpdateGraphs(kDataContextName,
+        [ { name: kXYGraphName,
+            title: `${neoDataset.label} Plot`,
+            xAttrName: "date",
+            yAttrName: "value",
+            legendAttrName: "label"
+          }
+      ]);
       await this.createOrUpdateSlider();
       await this.updateMapAndGraphs();
-      await addConnectingLinesToGraph(kDataContextName, `${neoDataset.label} Plot`,{showConnectingLines: true});
+      await addConnectingLinesToGraph();
       const roiPosition = getTimestamp(this.loadedImages[0]);
-      await addRegionOfInterestToGraphs(kDataContextName, neoDataset.label, roiPosition);
+      await addRegionOfInterestToGraphs(roiPosition);
+      await rescaleGraph(kXYGraphName);
+      await rescaleGraph(kChartGraphName);
+
     } catch (error) {
       console.error("Failed to process dataset:", error);
       throw error;
@@ -341,7 +359,7 @@ export class DataManager {
     // to the slider movement.
     if (!skipGraphs && pins.length > 0) {
       const startTime = getTimestamp(item);
-      await updateGraphRegionOfInterest(kDataContextName, neoDataset.label, startTime);
+      await updateGraphRegionOfInterest(kDataContextName, startTime);
     }
 
     await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
@@ -381,8 +399,10 @@ export class DataManager {
   }
 
   private async createMapPinsCollection(): Promise<void> {
+    // The codap-plugin-api does not support colormap property to attributes
+    // so we update the attribute after the collection is created
     await createParentCollection(kDataContextName, kMapPinsCollectionName, [
-      { name: "label" },
+      { name: "label", type: "categorical"},
       { name: "pinColor", type: "color" }
     ]);
   }
