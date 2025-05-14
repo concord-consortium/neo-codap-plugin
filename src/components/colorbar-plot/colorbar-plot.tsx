@@ -34,7 +34,7 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
     );
   }
 
-  const { pins } = pluginState;
+  const { pins, selectedPins } = pluginState;
   if (!pins.length) {
     return (
       <div className="colorbar-container">
@@ -48,6 +48,8 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
   const labels: string[] = pins.map((pin) => {
     return pinLabel(pin);
   });
+  // Filter selected pins
+  const selectedPinLabels = selectedPins.map((pin) => pinLabel(pin));
 
   const datasetMap = new Map<number, IDataset>();
   const yLabels: string[] = [];
@@ -145,15 +147,21 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
         // leave() {
         //   stopAnnotationDragListener();
         // },
-        annotations: {
-          box1: {
-            type: "box" as const,
-            yMin: yLabels.indexOf(selectedYMDDate!),
-            yMax: yLabels.indexOf(selectedYMDDate!) + 1,
-            backgroundColor: "rgba(255, 99, 132, 0.25)"
-          }
-        }
-      }
+        annotations: selectedPinLabels.map((label) => {
+          const xIndex = labels.indexOf(label); // Find the index of the selected pin label
+          if (xIndex === -1) return null; // Skip if the label is not found
+          return {
+            type: "box",
+            xMin: xIndex - 0.5, // Highlight the entire vertical bar
+            xMax: xIndex + 0.5,
+            yMin: 0, // Start from the bottom of the chart
+            yMax: yLabels.length,
+            backgroundColor: "rgba(255, 99, 132, 0.25)",
+            borderColor: "rgba(255, 99, 132, 1)",
+            borderWidth: 2,
+          };
+        }).filter(Boolean), // Remove null annotations
+      },
     },
     responsive: true,
     maintainAspectRatio: false,
@@ -162,6 +170,25 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
         stacked: true,
         type: "category" as const,
         barPercentage: .5,
+        ticks: {
+          callback: (value: string, index: number) =>{
+            if (selectedPinLabels.includes(labels[index])) {
+              return `${labels[index]}`;
+            }
+            return labels[index];
+          },
+          color: (context: any) => {
+            const label = labels[context.index];
+            return selectedPinLabels.includes(label) ? "rgba(255, 99, 132, 1)" : "rgba(0, 0, 0, 1)";
+          },
+          font: (context: any) =>{
+            // Change the font style of the selected labels
+            const label = labels[context.index];
+            return selectedPinLabels.includes(label)
+              ? { weight: "bold", size: 10 }
+              : { weight: "normal", size: 10 };
+          },
+        },
       },
       y: {
         reverse: true,
