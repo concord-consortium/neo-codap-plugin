@@ -7,11 +7,12 @@ import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { kDataContextName } from "../../data/constants";
 import { kNeoDatasets } from "../../models/neo-datasets";
-import { DataManager } from "../../models/data-manager";
+import { dataManager } from "../../models/data-manager";
 import { pluginState } from "../../models/plugin-state";
 import { isNonEmbedded } from "../../utils/embed-check";
 import { DatasetSelector } from "../dataset-selector/dataset-selector";
 import { ProgressContainer } from "./progress-container";
+import { ColorbarPlot } from "../colorbar-plot/colorbar-plot";
 
 import "./dataset-tab.scss";
 
@@ -21,14 +22,13 @@ export const DatasetTab = observer(function DatasetTab() {
   const [selectedNeoDatasetId, setSelectedNeoDatasetId] = useState<string>(defaultNeoDatasetId);
   const [progress, setProgress] = useState({ current: -1, total: 0 });
   const [showProgress, setShowProgress] = useState(false);
-  const [dataManager] = useState(() => {
-    const manager = new DataManager();
-    manager.setProgressCallback((current, total) => {
+
+  useEffect(() => {
+    dataManager.setProgressCallback((current, total) => {
       setProgress({ current, total });
       setShowProgress(current >= 0 && current < total);
     });
-    return manager;
-  });
+  }, []);
 
   const selectedNeoDataset = kNeoDatasets.find(d => d.id === selectedNeoDatasetId);
 
@@ -63,24 +63,29 @@ export const DatasetTab = observer(function DatasetTab() {
   };
 
   return (
-    <div className="App">
-      <h1>NASA Earth Data</h1>
-      <DatasetSelector selectedDataset={selectedNeoDatasetId} onDatasetChange={handleDatasetChange} />
-      <div className="legend-container">
-        <img src={selectedNeoDataset?.legendImage} alt={`${selectedNeoDataset?.label} legend`} />
-      </div>
-      <div className="divider" />
-      <div className="footer">
-        {showProgress
-          ? <ProgressContainer current={progress.current} total={progress.total}/>
-          : <div data-testid="number-of-locations">Locations: {pluginState.pins.length}</div>
-        }
-        <div className="footer-buttons-container">
-          <button className="get-data-button" disabled={showProgress} onClick={handleGetData}
-            title="Fetch data from NASA and send to CODAP">
-              Get Data
-          </button>
+    <div className="dataset-tab">
+      <div className="left-panel">
+        <h1>NASA Earth Data</h1>
+        <DatasetSelector selectedDataset={selectedNeoDatasetId} onDatasetChange={handleDatasetChange} />
+        <div className="legend-container">
+          <img src={selectedNeoDataset?.legendImage} alt={`${selectedNeoDataset?.label} legend`} />
         </div>
+        <div className="divider" />
+        <div className="footer">
+          {showProgress
+            ? <ProgressContainer current={progress.current} total={progress.total}/>
+            : <div data-testid="number-of-locations">Locations: {pluginState.pins.length}</div>
+          }
+          <div className="footer-buttons-container">
+            <button className="get-data-button" disabled={showProgress} onClick={handleGetData}
+              title="Fetch data from NASA and send to CODAP">
+                Get Data
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="right-panel">
+        <ColorbarPlot/>
       </div>
     </div>
   );

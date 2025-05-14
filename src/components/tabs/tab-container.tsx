@@ -16,10 +16,10 @@ export const TabContainer: React.FC = () => {
           About
         </Tabs.Trigger>
       </Tabs.List>
-      <Tabs.Content value="dataset">
+      <Tabs.Content value="dataset" className="tabs-content">
         <DatasetTab />
       </Tabs.Content>
-      <Tabs.Content value="about">
+      <Tabs.Content value="about" className="tabs-content">
         <AboutTab />
       </Tabs.Content>
     </Tabs.Root>

@@ -1,3 +1,4 @@
+import { makeObservable, observable } from "mobx";
 import {
   ClientNotification,
   codapInterface,
@@ -97,11 +98,16 @@ export type ProgressCallback = (current: number, total: number) => void;
 export class DataManager {
   private progressCallback?: ProgressCallback;
   private reversePalette: Record<number, number> | undefined;
-  private loadedImages : NeoLoadedImage[] | undefined;
+  loadedImages : NeoLoadedImage[] = [];
+  currentImageIndex = -1;
 
   constructor() {
     this.handleGlobalUpdate = this.handleGlobalUpdate.bind(this);
     codapInterface.on("notify", "global[Date]", this.handleGlobalUpdate);
+    makeObservable(this, {
+      loadedImages: observable,
+      currentImageIndex: observable,
+    });
   }
 
   get maxImages(): number {
@@ -236,9 +242,11 @@ export class DataManager {
       const sortedDates = dates.sort();
       this.loadedImages = sortedDates.map(date => loadedImageMap.get(date)).filter((item) => !!item);
 
+      this.currentImageIndex = 0;
+
       // We always setup the slider and update the map even if there are no pins
       await this.createOrUpdateSlider();
-      await this.updateMapAndGraphsWithItemIndex(0, true);
+      await this.updateMapAndGraphs(true);
 
       if (pluginState.pins.length === 0) {
         // No pins available, so all we do is create the slider
@@ -300,16 +308,10 @@ export class DataManager {
             xAttrName: "date",
             yAttrName: "value",
             legendAttrName: "label"
-          },
-          { name: kChartGraphName,
-            title: `${neoDataset.label} Chart`,
-            xAttrName: "label",
-            yAttrName: "date",
-            legendAttrName: "color"
           }
       ]);
       await this.createOrUpdateSlider();
-      await this.updateMapAndGraphsWithItemIndex(0);
+      await this.updateMapAndGraphs();
       await addConnectingLinesToGraph();
       const roiPosition = getTimestamp(this.loadedImages[0]);
       await addRegionOfInterestToGraphs(roiPosition);
@@ -338,8 +340,10 @@ export class DataManager {
     await createOrUpdateDateSlider(value, lowerBound, upperBound);
   }
 
-  public async updateMapAndGraphsWithItemIndex(index: number, skipGraphs?: boolean): Promise<void> {
+  public async updateMapAndGraphs(skipGraphs?: boolean): Promise<void> {
     const { neoDataset, pins } = pluginState;
+    const index = this.currentImageIndex;
+
     if (!neoDataset) {
       console.error("No dataset specified");
       return;
@@ -350,19 +354,19 @@ export class DataManager {
       return;
     }
     const item = this.loadedImages[index];
-    await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
 
-    if (skipGraphs || pins.length === 0) {
-      // No pins available, so we don't need to update the graphs
-      return;
+    // Update the graphs first so the region of interest line is more responsive
+    // to the slider movement.
+    if (!skipGraphs && pins.length > 0) {
+      const startTime = getTimestamp(item);
+      await updateGraphRegionOfInterest(kDataContextName, startTime);
     }
 
-    const startTime = getTimestamp(item);
-    await updateGraphRegionOfInterest(kDataContextName, startTime);
+    await createOrUpdateMap(`${neoDataset.label} - ${item.date}`, item.url);
   }
 
   private handleGlobalUpdate(notification: ClientNotification) {
-    if (!this.loadedImages) {
+    if (!this.loadedImages || this.loadedImages.length === 0) {
       return;
     }
     // convert to number
@@ -370,7 +374,6 @@ export class DataManager {
 
     // Find the item index that matches the timestamp
     const itemIndex = this.loadedImages.findIndex((item, index) => {
-      if (!this.loadedImages) return false;
       const itemTimestamp = getTimestamp(item);
       const nextItemIndex = index + 1;
       const nextItemTimestamp = nextItemIndex >= this.loadedImages.length
@@ -379,7 +382,8 @@ export class DataManager {
       return timestamp >= itemTimestamp && timestamp < nextItemTimestamp;
     });
     if (itemIndex !== -1) {
-      this.updateMapAndGraphsWithItemIndex(itemIndex);
+      this.currentImageIndex = itemIndex;
+      this.updateMapAndGraphs();
     }
   }
 
@@ -403,3 +407,5 @@ export class DataManager {
     ]);
   }
 }
+
+export const dataManager = new DataManager();

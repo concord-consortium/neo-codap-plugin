@@ -4,8 +4,6 @@ import { isNonEmbedded } from "../utils/embed-check";
 import { TabContainer } from "./tabs/tab-container";
 import { Provider } from "./ui/provider";
 
-import "./app.css";
-
 export const App = () => {
   useEffect(() => {
     if (isNonEmbedded()) {

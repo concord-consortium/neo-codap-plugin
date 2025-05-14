@@ -28,7 +28,6 @@ export function pinLabel(pin: IMapPin) {
   return `${pin.lat.toFixed(2)}, ${pin.long.toFixed(2)}`;
 }
 
-
 class PluginState {
   neoDataset: NeoDataset | undefined;
   neoDatasetName = "";
@@ -122,7 +121,7 @@ class PluginState {
 }
 
 export async function initializeNeoPlugin() {
-  initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
+  await initializePlugin({ pluginName: kPluginName, version: kVersion, dimensions: kInitialDimensions });
 
   // Create the pin dataset
   await sendMessage("create", `dataContext`, {

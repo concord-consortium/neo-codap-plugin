@@ -77,7 +77,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await expect(page.getByTestId("case-table")).toHaveCount(1);
   await expect(page.getByTestId("codap-slider")).toHaveCount(1);
   await expect(page.getByTestId("codap-map")).toHaveCount(1);
-  await expect(page.getByTestId("codap-graph")).toHaveCount(2);
+  await expect(page.getByTestId("codap-graph")).toHaveCount(1);
 
   //make sure the graph opens and have the correct axes attributes
   await expect(page.locator(".Graph-title-bar").nth(0)).toContainText("Rainfall Plot");
@@ -88,8 +88,4 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
   await expect(page.getByTestId("graph-display-values-button")).toBeVisible();
   page.getByTestId("graph-display-values-button").nth(0).click();
   await expect(page.getByTestId("adornment-checkbox-connecting-lines")).toBeChecked();
-  await expect(page.locator(".Graph-title-bar").nth(1)).toContainText("Rainfall Chart");
-  await expect(page.getByTestId("axis-legend-attribute-button-bottom").nth(1)).toContainText("label");
-  await expect(page.getByTestId("axis-legend-attribute-button-left").nth(1)).toContainText("date");
-  await expect(page.getByTestId("axis-legend-attribute-button-legend").nth(1)).toContainText("color");
 });

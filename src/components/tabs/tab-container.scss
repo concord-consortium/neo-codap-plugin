@@ -1,11 +1,12 @@
 .tabs-root {
-  height: 27px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 
   .tabs-list {
-    width: 315px;
     min-height: 27px !important;
     height: 27px;
-    margin: 0 72px 0 2px;
+    margin: 0 2px 0 2px;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
     border-bottom: 1px solid #777;
@@ -20,5 +21,13 @@
         border-bottom: none;
       }
     }
+  }
+
+  .tabs-content {
+    flex: 1;
+    // This prevents the content from overflowing
+    min-height: 0;
+    // Remove a gap added by Chakra which seems unnecessary
+    padding-top: 0;
   }
 }

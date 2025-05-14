@@ -1,7 +1,8 @@
-import { codapInterface, sendMessage }
-  from "@concord-consortium/codap-plugin-api";
-import { kOneMonthInSeconds, kMapName, kMapPinsCollectionName, kDataContextName, kSliderComponentName,
-  kChartGraphName, kXYGraphName } from "../data/constants";
+import { codapInterface, sendMessage } from "@concord-consortium/codap-plugin-api";
+import {
+  kOneMonthInSeconds, kMapName, kMapPinsCollectionName, kDataContextName, kSliderComponentName,
+  kXYGraphName, kChartGraphName
+} from "../data/constants";
 
 export async function createOrUpdateMap(title: string, url?: string): Promise<void> {
   const mapProps: Record<string, any> = {
@@ -142,11 +143,7 @@ export const addRegionOfInterestToGraphs = async (position: number | string) => 
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("create", `component[${kChartGraphName}].adornment`, {
-    type: "Region of Interest",
-    primary: {position, "extent": kOneMonthInSeconds}
-  });
-  return {roiXYGraph, roiCategoryChartGraph};
+  return {roiXYGraph};
 };
 
 export const updateGraphRegionOfInterest = async (dataContext: string,position: number | string) => {
@@ -154,11 +151,7 @@ export const updateGraphRegionOfInterest = async (dataContext: string,position: 
     type: "Region of Interest",
     primary: {position, "extent": kOneMonthInSeconds}
   });
-  const roiCategoryChartGraph = await sendMessage("update", `component[${kChartGraphName}].adornment`, {
-    type: "Region of Interest",
-    primary: {position, "extent": kOneMonthInSeconds}
-  });
-  return {roiXYGraph, roiCategoryChartGraph};
+  return {roiXYGraph};
 };
 
 export const updateLocationColorMap = async (colorMap: Record<string,string>) => {
