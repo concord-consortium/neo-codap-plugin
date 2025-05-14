@@ -1,11 +1,17 @@
 // This can be run with `npx tsx scrape-neo-images.ts`
 import * as cheerio from "cheerio";
 import * as fs from "fs";
-import * as path from "path";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
 import { kNeoDatasetConfigs } from "../src/models/neo-dataset-configs.js";
 import { NeoImageInfo, ScrapedNeoDatasetInfo, ScrapedNeoDatasetMap } from "../src/models/neo-types.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 async function fetchHtml(url: string): Promise<string> {
+  // Delay to avoid overwhelming the server
+  await new Promise(resolve => setTimeout(resolve, 500));
   const response = await fetch(url);
   return await response.text();
 }
@@ -85,9 +91,9 @@ async function main() {
   // results.MOD_LSTD_CLIM_M = await processDataset("MOD_LSTD_CLIM_M");
 
   // Make sure the data directory exists
-  const dataDir = path.join(process.cwd(), "src", "data");
+  const dataDir = path.join(__dirname, "..", "src", "data");
   if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
+    fs.mkdirSync(dataDir, { recursive: true });
   }
 
   // Save results
