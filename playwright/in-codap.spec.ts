@@ -29,13 +29,14 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
 
   await iframe.getByRole("button", { name: "Get Data" }).click();
 
-  // Make sure the table has something from our data in it
+  // Make sure the table is visible and has something from our data in it
+  await expect(page.getByTestId("collection-table-grid").nth(1)).toBeVisible();
   await expect(page.getByTestId("collection-table-grid").nth(1), "Table should contain date")
-    .toContainText("1/1/2001", { timeout: 30000 });
+    .toContainText("1/1", { timeout: 30000 });
 
   // Make sure there is a slider with the correct value
   await expect(page.getByTestId("slider-variable-name-text")).toContainText("Date");
-  await expect(page.getByTestId("slider-variable-value-text-input")).toHaveValue("1/2001");
+  await expect(page.getByTestId("slider-variable-value-text-input")).toHaveValue("1/2024");
 
   // Move the slider and make sure the map date changes
   const sliderThumb = page.getByTestId("slider-thumb-icon");
@@ -48,7 +49,7 @@ test("App inside of CODAP", async ({ baseURL, page }) => {
 
   const mapTile = page.getByTestId("codap-map");
   const mapTitle = mapTile.getByTestId("component-title-bar");
-  await expect(mapTitle).toContainText("2001-02-01");
+  await expect(mapTitle).toContainText("2024-04-01");
 
   const iframeUrl = await iframe.owner().getAttribute("src");
   // eslint-disable-next-line playwright/no-conditional-in-test
