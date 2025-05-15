@@ -147,21 +147,29 @@ export const ColorbarPlot = observer(function ColorbarPlot() {
         // leave() {
         //   stopAnnotationDragListener();
         // },
-        annotations: selectedPinLabels.map((label) => {
-          const xIndex = labels.indexOf(label); // Find the index of the selected pin label
-          if (xIndex === -1) return null; // Skip if the label is not found
-          return {
-            type: "box",
-            xMin: xIndex - 0.5, // Highlight the entire vertical bar
-            xMax: xIndex + 0.5,
-            yMin: 0, // Start from the bottom of the chart
-            yMax: yLabels.length,
-            backgroundColor: "rgba(255, 99, 132, 0.25)",
-            borderColor: "rgba(255, 99, 132, 1)",
-            borderWidth: 2,
-          };
-        }).filter(Boolean), // Remove null annotations
-      },
+        annotations: {
+          box1: {
+            type: "box" as const,
+            yMin: yLabels.indexOf(selectedYMDDate!),
+            yMax: yLabels.indexOf(selectedYMDDate!) + 1,
+            backgroundColor: "rgba(255, 99, 132, 0.25)"
+          },
+          ...selectedPinLabels.map((label) => {
+            const xIndex = labels.indexOf(label); // Find the index of the selected pin label
+            if (xIndex === -1) return null; // Skip if the label is not found
+            return {
+              type: "box",
+              xMin: xIndex - 0.5, // Highlight the entire vertical bar
+              xMax: xIndex + 0.5,
+              yMin: 0, // Start from the bottom of the chart
+              yMax: yLabels.length,
+              backgroundColor: "rgba(255, 99, 132, 0.25)",
+              borderColor: "rgba(255, 99, 132, 1)",
+              borderWidth: 2,
+            };
+          }).filter(Boolean) // Remove null annotations
+        }
+      }
     },
     responsive: true,
     maintainAspectRatio: false,
