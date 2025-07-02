@@ -25,9 +25,6 @@ jobs:
     needs:
       - build_test
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.ref_type == 'branch' && 'branches' || 'versions' }}
-      url: https://codap3.concord.org/branch/main/?di=https://models-resources.concord.org/neo-codap-plugin/${{ steps.s3-deploy.outputs.deployPath }}/index.html
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,6 +37,8 @@ jobs:
           prefix: neo-codap-plugin
           awsAccessKeyId: ${{ secrets.AWS_ACCESS_KEY_ID }}
           awsSecretAccessKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          deployRunUrl: https://codap3.concord.org/branch/main/?di=https://models-resources.concord.org/neo-codap-plugin/__deployPath__/index.html
           # Parameters to GHActions have to be strings, so a regular yaml array cannot
           # be used. Instead the `|` turns the following lines into a string
           topBranches: |
