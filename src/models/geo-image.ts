@@ -20,6 +20,45 @@ interface PixelCoordinate {
 }
 
 /**
+ * Converts latitude and longitude to pixel coordinates.
+ * @param imageWidth - The width of the image in pixels.
+ * @param imageHeight - The height of the image in pixels.
+ * @param lat - The latitude to convert (-90 to 90), values outside this range will be clamped.
+ * @param long - The longitude to convert, this will be normalized between -180 to 180.
+ * @returns The pixel coordinates corresponding to the latitude and longitude.
+ */
+export function latLongToPixel(
+  imageWidth: number, imageHeight: number, lat: number, long: number
+): PixelCoordinate {
+  // Validate image dimensions
+  if (imageWidth <= 0 || imageHeight <= 0) {
+    throw new Error("Invalid image dimensions");
+  }
+
+  // Shift longitude so -180 is 0 and 180 is 360.
+  const shiftedLong = long - kLongitudeMin;
+  // Normalize longitude so it is always in the range [0, 360)
+  const normalizedLong = ((shiftedLong % kLongitudeRange) + kLongitudeRange) % kLongitudeRange;
+
+  // Shift latitude so -90 is 0 and 90 is 180
+  const shiftedLat = lat - kLatitudeMin;
+
+  // Convert to percentages
+  const xPercent = normalizedLong / kLongitudeRange;
+  const yPercent = shiftedLat / kLatitudeRange;
+
+  // Convert to pixel coordinates
+  // Note: y is inverted because image coordinates go top-down
+  // The y value is clamped so it always a valid pixel value
+  // The x value is normalized above so it will always be a valid pixel value
+  return {
+    x: Math.floor(xPercent * imageWidth),
+    y: Math.min(Math.max(Math.floor((1 - yPercent) * imageHeight), 0), imageHeight - 1),
+  };
+}
+
+
+/**
  * GeoImage represents a single geographic image and provides methods to process it.
  * Each instance is tied to a specific image and should be disposed after use.
  */
@@ -81,28 +120,12 @@ export class GeoImage {
       throw new Error("Image not loaded");
     }
 
-    const imageWidth = this.img.naturalWidth;
-    const imageHeight = this.img.naturalHeight;
-
-    // Validate image dimensions
-    if (imageWidth <= 0 || imageHeight <= 0) {
-      throw new Error("Invalid image dimensions");
-    }
-
-    // Normalize longitude from -180...180 to 0...360
-    const normalizedLong = long - kLongitudeMin;
-    // Normalize latitude from -90...90 to 0...180
-    const normalizedLat = lat - kLatitudeMin;
-    // Convert to percentages
-    const xPercent = normalizedLong / kLongitudeRange;
-    const yPercent = normalizedLat / kLatitudeRange;
-
-    // Convert to pixel coordinates
-    // Note: y is inverted because image coordinates go top-down
-    return {
-      x: Math.floor(xPercent * imageWidth),
-      y: Math.floor((1 - yPercent) * imageHeight)
-    };
+    return latLongToPixel(
+      this.img.naturalWidth,
+      this.img.naturalHeight,
+      lat,
+      long
+    );
   }
 
   /**

@@ -1,5 +1,6 @@
-import { PlaywrightCoverageOptions } from "@bgotink/playwright-coverage";
-import { defineConfig, devices, ReporterDescription } from "@playwright/test";
+import type { PlaywrightCoverageOptions } from "@bgotink/playwright-coverage";
+import type { ReporterDescription } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 
