@@ -28,6 +28,22 @@ export function pinLabel(pin: IMapPin) {
   return `${pin.lat.toFixed(2)}, ${pin.long.toFixed(2)}`;
 }
 
+/**
+ * Return NaN for invalid values, otherwise return the numeric value.
+ *
+ * @param value
+ * @returns
+ */
+export function numericValue(value: string | number | null | undefined): number {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    return parseFloat(value);
+  }
+  return NaN;
+}
+
 class PluginState {
   neoDataset: NeoDataset | undefined;
   neoDatasetName = "";
@@ -72,15 +88,18 @@ class PluginState {
     const pinResult = yield(getAllItems(kPinDataContextName));
     if (pinResult.success) {
       const pinData = pinResult.values as any;
-      this.pins = pinData.map((pin: any) => {
-        const values = pin.values;
-        return {
-          color: values[kPinColorAttributeName],
-          id: pin.id,
-          lat: values[kPinLatAttributeName],
-          long: values[kPinLongAttributeName]
-        };
-      });
+      this.pins = pinData
+        .map((pin: any) => {
+          const values = pin.values;
+          return {
+            color: values[kPinColorAttributeName],
+            id: pin.id,
+            // Handle missing or invalid
+            lat: numericValue(values[kPinLatAttributeName]),
+            long: numericValue(values[kPinLongAttributeName])
+          };
+        })
+        .filter((pin: IMapPin) => !isNaN(pin.lat) && !isNaN(pin.long));
     }
   }
 
@@ -165,8 +184,8 @@ export async function initializeNeoPlugin() {
             const pinCase = (pinValues as any).case;
             return {
               id: pinCase.id,
-              lat: pinCase.values.pinLat,
-              long: pinCase.values.pinLong,
+              lat: numericValue(pinCase.values.pinLat),
+              long: numericValue(pinCase.values.pinLong),
               color: pinCase.values.pinColor,
             };
           }
