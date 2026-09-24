@@ -1,6 +1,10 @@
 # NASA Earth Observatory CODAP Plugin
 This CODAP Plugin downloads raster data from the NASA Earth Observatory and adds it to a Map in CODAP. It also generates a data table with time series data based on the locations of pins in the CODAP Map.
 
+## Deployment
+
+S3 deployment is handled by GitHub Actions using OIDC for AWS authentication. See [deploy-setup.md in starter-projects](https://github.com/concord-consortium/starter-projects/blob/main/doc/deploy-setup.md) for how the AWS side is set up, and [docs/deploy.md](docs/deploy.md) for how deploys work in this repo.
+
 ## UI Components
 This project uses Chakra UI v3 components. When adding new components or modifying existing ones:
 - Use Chakra UI v3 components (e.g., `Tabs.Root`, `Tabs.List`, `Tabs.Trigger`, `Tabs.Content`)
