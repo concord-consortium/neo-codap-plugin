@@ -1,3 +1,11 @@
+// Legend images were originally hosted at https://neo.gsfc.nasa.gov/palettes/
+// which is no longer available, so copies from the Wayback Machine are bundled.
+import trmmRainfallMLegend from "../assets/legends/trmm_rainfall_m.png";
+import mopittCoLegend from "../assets/legends/mopitt_co.png";
+import omiNo2Legend from "../assets/legends/omi_no2.png";
+import modisNdviLegend from "../assets/legends/modis_ndvi.png";
+import modisLstLegend from "../assets/legends/modis_lst.png";
+import modisFireL3Legend from "../assets/legends/modis_fire_l3.png";
 import { NeoDatasetConfig } from "./neo-types";
 
 /**
@@ -7,7 +15,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "GPM_3IMERGM",
     label: "Rainfall",
-    legendImage: "https://neo.gsfc.nasa.gov/palettes/trmm_rainfall_m.png",
+    legendImage: trmmRainfallMLegend,
     paletteToValue: (index: number) => {
       // Convert palette index to mm/hr
       // The values are outside of the range
@@ -31,7 +39,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "MOP_CO_M",
     label: "Carbon Monoxide",
-    legendImage: "https://neo.gsfc.nasa.gov/palettes/mopitt_co.png",
+    legendImage: mopittCoLegend,
     paletteToValue: (index: number) => {
       // Convert palette index to ppbv
       // The values are outside of the range, or they are 255 which seems
@@ -45,7 +53,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "AURA_NO2_M",
     label: "Nitrogen Dioxide",
-    legendImage: "https://neo.gsfc.nasa.gov/palettes/omi_no2.png",
+    legendImage: omiNo2Legend,
     paletteToValue: (index: number) => {
       // Convert palette index to billon molecules/mm^2
       // The values are outside of the range, or they are 255 which seems
@@ -59,7 +67,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "MOD_NDVI_M",
     label: "Vegetation Index",
-    legendImage: "https://neo.gsfc.nasa.gov/palettes/modis_ndvi.png",
+    legendImage: modisNdviLegend,
     paletteToValue: (index: number) => {
       // Convert palette index to some unit-less value of vegetation index
       // The values are outside of the range, or they are 255 which seems
@@ -73,7 +81,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "MOD_LSTD_M",
     label: "Land Surface Temperature (day)",
-    legendImage: "https://neo.gsfc.nasa.gov/palettes/modis_lst.png",
+    legendImage: modisLstLegend,
     paletteToValue: (index: number) => {
       // Convert palette index to degC
       // The values are outside of the range, or they are 255 which seems
@@ -87,7 +95,7 @@ export const kNeoDatasetConfigs: NeoDatasetConfig[] = [
   {
     id: "MOD14A1_M_FIRE",
     label: "Active Fires",
-    legendImage: "https://neo.gsfc.nasa.gov/palettes/modis_fire_l3.png",
+    legendImage: modisFireL3Legend,
     paletteToValue: (index: number) => {
       // Convert palette index to fire pixels / 1000 km^2 / day
 
