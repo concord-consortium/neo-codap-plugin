@@ -1,12 +1,15 @@
 // Legend images were originally hosted at https://neo.gsfc.nasa.gov/palettes/
 // which is no longer available, so copies from the Wayback Machine are bundled.
-import trmmRainfallMLegend from "../assets/legends/trmm_rainfall_m.png";
-import mopittCoLegend from "../assets/legends/mopitt_co.png";
-import omiNo2Legend from "../assets/legends/omi_no2.png";
-import modisNdviLegend from "../assets/legends/modis_ndvi.png";
-import modisLstLegend from "../assets/legends/modis_lst.png";
-import modisFireL3Legend from "../assets/legends/modis_fire_l3.png";
+// `new URL(..., import.meta.url)` is used instead of importing the PNGs so the
+// scripts in `scripts/`, which load this module with tsx, don't need an image loader.
 import { NeoDatasetConfig } from "./neo-types";
+
+const trmmRainfallMLegend = new URL("../assets/legends/trmm_rainfall_m.png", import.meta.url).href;
+const mopittCoLegend = new URL("../assets/legends/mopitt_co.png", import.meta.url).href;
+const omiNo2Legend = new URL("../assets/legends/omi_no2.png", import.meta.url).href;
+const modisNdviLegend = new URL("../assets/legends/modis_ndvi.png", import.meta.url).href;
+const modisLstLegend = new URL("../assets/legends/modis_lst.png", import.meta.url).href;
+const modisFireL3Legend = new URL("../assets/legends/modis_fire_l3.png", import.meta.url).href;
 
 /**
  * The NEO dataset configs that we support
