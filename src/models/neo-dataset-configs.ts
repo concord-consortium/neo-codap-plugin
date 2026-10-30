@@ -1,5 +1,5 @@
-// Legend images were originally hosted at https://neo.gsfc.nasa.gov/palettes/
-// which is no longer available, so copies from the Wayback Machine are bundled.
+// Legend images are Wayback Machine copies of the NEO palettes:
+// https://web.archive.org/web/2026id_/https://neo.gsfc.nasa.gov/palettes/<name>.png
 // `new URL(..., import.meta.url)` is used instead of importing the PNGs so the
 // scripts in `scripts/`, which load this module with tsx, don't need an image loader.
 import { NeoDatasetConfig } from "./neo-types";
