@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "fs";
+import { fileURLToPath } from "url";
 import { kNeoDatasetConfigs } from "./neo-dataset-configs";
 
 describe("paletteToValue", () => {
@@ -31,6 +33,18 @@ describe("paletteToValue", () => {
           expect(typeof result).toBe("number");
         });
       });
+    });
+  });
+});
+
+describe("legendImage", () => {
+  kNeoDatasetConfigs.forEach(({ id, legendImage }) => {
+    test(`Dataset ID: ${id} legend is a bundled PNG`, () => {
+      const url = new URL(legendImage);
+      expect(url.protocol).toBe("file:");
+      const path = fileURLToPath(url);
+      expect(existsSync(path)).toBe(true);
+      expect(readFileSync(path).subarray(1, 4).toString()).toBe("PNG");
     });
   });
 });
