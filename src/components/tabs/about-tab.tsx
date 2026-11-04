@@ -6,7 +6,7 @@ export function AboutTab() {
     <div className="about-tab">
       <h4>About</h4>
       <p>
-        This plugin uses data from the <a href="https://neo.gsfc.nasa.gov/" rel="noreferrer" target="_blank">NASA Earth Observations</a> (NEO) site which supplies integrated worldwide data for a variety of geophysical phenomena. Choose from among the several sets of raster data to see and interact with them in CODAP.
+        This plugin uses data from the <a href="https://science.nasa.gov/earth/nasa-earth-observations-neo/" rel="noreferrer" target="_blank">NASA Earth Observations</a> (NEO) site which supplies integrated worldwide data for a variety of geophysical phenomena. Choose from among the several sets of raster data to see and interact with them in CODAP.
       </p>
       <h4>Acknowledgements</h4>
       <p>
